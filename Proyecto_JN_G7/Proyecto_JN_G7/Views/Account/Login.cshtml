@@ -1,0 +1,33 @@
+﻿@model Proyecto_JN_G7.Models.Autenticacion
+
+@{
+    Layout = "_layoutExterno";
+    ViewData["Title"] = "Login";
+}
+
+<h3 class="card-title text-center mb-4">Iniciar Sesión</h3>
+
+<form asp-action="Login" method="post" novalidate>
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label"></label>
+        <input asp-for="Password" class="form-control" type="password" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+    <div class="d-grid">
+        <button type="submit" class="btn btn-primary">Entrar</button>
+    </div>
+</form>
+
+@if (ViewBag.Mensaje != null)
+{
+    <div class="alert alert-danger mt-3">@ViewBag.Mensaje</div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
