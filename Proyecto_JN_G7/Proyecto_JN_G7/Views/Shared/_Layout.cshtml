@@ -20,8 +20,9 @@
     <link href="~/css/swiper-bundle.min.css" rel="stylesheet">
     <link href="~/css/main.css" rel="stylesheet">
 </head>
-
-
+@{
+    var nombre = Context.Session.GetString("NombreCompleto");
+}
 <body class="index-page">
 
     <header id="header" class="header sticky-top">
@@ -79,8 +80,22 @@
                 </nav>
 
                 <a class="cta-btn d-none d-sm-block" href="#appointment">Make an Appointment</a>
-                <a asp-controller="Account" asp-action="Login" class="cta-btn d-none d-sm-block">Log in</a>
-
+                @if (string.IsNullOrEmpty(nombre))
+                {
+                    <a asp-controller="Account" asp-action="Login" class="cta-btn d-none d-sm-block">Iniciar Sesión</a>
+                }
+                else
+                {
+                    <div class="dropdown d-none d-sm-block">
+                        <a href="#" class="cta-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            @nombre <i class="bi bi-chevron-down"></i>
+                        </a>
+                        <ul class="dropdown-menu" style="min-width: 90%;">
+                            <li><a class="dropdown-item" asp-controller="Cuenta" asp-action="Perfil">Perfil</a></li>
+                            <li><a class="dropdown-item" asp-controller="Account" asp-action="Logout">Cerrar sesión</a></li>
+                        </ul>
+                    </div>
+                }
             </div>
 
         </div>

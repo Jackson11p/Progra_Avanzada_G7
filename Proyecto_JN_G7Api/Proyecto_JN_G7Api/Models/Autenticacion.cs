@@ -1,4 +1,4 @@
-﻿namespace Proyecto_JN_G7.Models
+﻿namespace Proyecto_JN_G7Api.Models
 {
     public class Autenticacion
     {

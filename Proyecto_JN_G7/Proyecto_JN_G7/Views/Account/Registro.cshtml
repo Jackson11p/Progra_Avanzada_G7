@@ -2,17 +2,28 @@
 
 @{
     Layout = "_layoutExterno";
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = "Registro";
 }
 
-<h3 class="card-title text-center mb-4">Iniciar Sesión</h3>
+<h3 class="card-title text-center mb-4">Crear Cuenta</h3>
 
 @if (ViewBag.Mensaje != null)
 {
     <div class="alert alert-danger mt-3">@ViewBag.Mensaje</div>
 }
 
-<form asp-action="Login" method="post" novalidate>
+<form asp-action="Registro" method="post" novalidate>
+    <div class="mb-3">
+        <label for="Cedula" class="form-label">Identificación</label>
+        <input asp-for="Cedula" class="form-control" id="Identificacion" oninput="ConsultarNombre()" />
+        <span asp-validation-for="Cedula" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="NombreCompleto" class="form-label">Nombre Completo</label>
+        <input asp-for="NombreCompleto" class="form-control bg-light text-dark" id="Nombre" readonly />
+        <span asp-validation-for="NombreCompleto" class="text-danger"></span>
+    </div>
     <div class="mb-3">
         <label for="CorreoElectronico" class="form-label">Correo electrónico</label>
         <input asp-for="CorreoElectronico" class="form-control"/>
@@ -30,8 +41,9 @@
     </div>
 
     <div class="mt-3 text-center">
-        <a asp-controller="Account" asp-action="OlvidoContrasena">¿Olvidó su contraseña?</a><br />
-        <a asp-controller="Account" asp-action="Registro">¿No tiene cuenta? Regístrese aquí</a><br />
+        <a asp-controller="Account" asp-action="Login">¿Ya tienes una cuenta? Inicia sesión aquí</a><br />
         <a asp-controller="Home" asp-action="Index" class="text-muted">← Volver al inicio</a>
     </div>
 </form>
+<script src="~/js/generales.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

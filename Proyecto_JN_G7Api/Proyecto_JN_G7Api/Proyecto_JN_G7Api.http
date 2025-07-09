@@ -1,0 +1,6 @@
+@Proyecto_JN_G7Api_HostAddress = http://localhost:5157
+
+GET {{Proyecto_JN_G7Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
