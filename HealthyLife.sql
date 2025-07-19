@@ -139,4 +139,30 @@ BEGIN
 END
 GO
 
-SELECT * FROM Usuarios
+CREATE PROCEDURE ValidarCorreo
+	@CorreoElectronico varchar(100)
+AS
+BEGIN
+
+	SELECT	UsuarioID,
+			NombreCompleto,
+			CorreoElectronico,
+			Cedula,
+			Activo
+	  FROM	Usuarios
+	WHERE	CorreoElectronico = @CorreoElectronico
+		AND Activo = 1
+	
+END
+GO
+
+CREATE OR ALTER PROCEDURE ActualizarContrasenna
+    @UsuarioID int,
+    @ContrasenaHash VARCHAR(255)
+AS
+BEGIN
+    UPDATE Usuarios
+    SET ContrasenaHash = @ContrasenaHash
+    WHERE UsuarioID = @UsuarioID
+END
+GO

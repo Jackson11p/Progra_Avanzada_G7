@@ -64,7 +64,7 @@ namespace Proyecto_JN_G7Api.Services
                 mensaje.Body = cuerpo;
                 mensaje.IsBodyHtml = true;
 
-                SmtpClient cliente = new SmtpClient("smtp.office365.com", 587);
+                SmtpClient cliente = new SmtpClient("smtp.gmail.com", 587);
                 cliente.Credentials = new NetworkCredential(correoSalida, claveCorreoSalida);
                 cliente.EnableSsl = true;
 

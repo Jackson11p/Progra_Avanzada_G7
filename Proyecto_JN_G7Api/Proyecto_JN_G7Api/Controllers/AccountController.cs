@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Text;
 using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -72,6 +73,46 @@ namespace Proyecto_JN_G7Api.Controllers
                 {
                     return NotFound(new RespuestaEstandar { Mensaje = "Usuario no encontrado o credenciales incorrectas." });
                 }
+            }
+        }
+
+        [HttpPost]
+        [Route("RecuperarAcceso")]
+        public IActionResult RecuperarAcceso(Autenticacion model)
+        {
+            using (var context = new SqlConnection(_configuration.GetSection("ConnectionStrings:Connection").Value))
+            {
+                var resultado = context.QueryFirstOrDefault<Autenticacion>("ValidarCorreo",
+                    new { model.CorreoElectronico });
+
+                if (resultado != null)
+                {
+                    var ContrasennaNotificar = _utilitarios.GenerarContrasenna(10);
+                    var ContrasenaHash = _utilitarios.Encrypt(ContrasennaNotificar);
+
+                    var resultadoActualizacion = context.Execute("ActualizarContrasenna",
+                    new
+                    {
+                        resultado.UsuarioID,
+                        ContrasenaHash
+                    },
+                    commandType: System.Data.CommandType.StoredProcedure);
+
+
+                    if (resultadoActualizacion > 0)
+                    {
+                        var ruta = Path.Combine(_environment.ContentRootPath, "Correos.html");
+                        var html = System.IO.File.ReadAllText(ruta, UTF8Encoding.UTF8);
+
+                        html = html.Replace("@@Usuario", resultado.NombreCompleto);
+                        html = html.Replace("@@Contrasenna", ContrasennaNotificar);
+
+                        _utilitarios.EnviarCorreo(resultado.CorreoElectronico!, "Recuperación de Acceso", html);
+                        return Ok(_utilitarios.RespuestaCorrecta(null));
+                    }
+                }
+
+                return BadRequest(_utilitarios.RespuestaIncorrecta("Su información no fue validada"));
             }
         }
     }

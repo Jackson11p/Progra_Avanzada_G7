@@ -85,6 +85,37 @@ namespace Proyecto_JN_G7.Controllers
         }
         #endregion
 
+        #region Recuperar Acceso
+
+        [HttpGet]
+        public IActionResult RecuperarAcceso()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult RecuperarAcceso(Autenticacion model)
+        {
+            using (var http = _http.CreateClient())
+            {
+                http.BaseAddress = new Uri(_configuration.GetSection("Start:ApiUrl").Value!);
+                var resultado = http.PostAsJsonAsync("api/Account/RecuperarAcceso", model).Result;
+
+                if (resultado.IsSuccessStatusCode)
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+                else
+                {
+                    var respuesta = resultado.Content.ReadFromJsonAsync<RespuestaEstandar>().Result;
+                    ViewBag.Mensaje = respuesta?.Mensaje;
+                    return View();
+                }
+            }
+        }
+
+        #endregion
+
         #region Cerrar Sesion
         [HttpGet]
         public IActionResult Logout()
