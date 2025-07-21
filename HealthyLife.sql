@@ -50,7 +50,7 @@ CREATE TABLE Pacientes (
     CorreoElectronico VARCHAR(100)
 );
 
--- Tabla: Citas médicas
+-- Tabla: Citas m dicas
 CREATE TABLE Citas (
     CitaID INT PRIMARY KEY IDENTITY(1,1),
     PacienteID INT NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE Citas (
     CONSTRAINT UC_Cita_Unica UNIQUE (DoctorID, FechaHora)
 );
 
--- Tabla: Diagnósticos médicos
+-- Tabla: Diagn sticos m dicos
 CREATE TABLE Diagnosticos (
     DiagnosticoID INT PRIMARY KEY IDENTITY(1,1),
     CitaID INT NOT NULL,
@@ -90,7 +90,7 @@ CREATE TABLE CitaTratamientos (
     FOREIGN KEY (TratamientoID) REFERENCES Tratamientos(TratamientoID)
 );
 
--- Tabla: Historial Médico
+-- Tabla: Historial M dico
 CREATE TABLE HistorialMedico (
     HistorialID INT PRIMARY KEY IDENTITY(1,1),
     PacienteID INT NOT NULL,
@@ -102,12 +102,17 @@ CREATE TABLE HistorialMedico (
     FOREIGN KEY (DiagnosticoID) REFERENCES Diagnosticos(DiagnosticoID)
 );
 
--- Tabla de Logs de Errores
+--Tablo Errores
 CREATE TABLE LogsErrores (
-    ErrorID BIGINT PRIMARY KEY IDENTITY(1,1),
-    UsuarioID BIGINT NULL,
-    Mensaje NVARCHAR(MAX),
-    FechaError DATETIME DEFAULT GETDATE()
+    ErrorID      BIGINT           PRIMARY KEY IDENTITY(1,1),
+    UsuarioID    BIGINT           NULL,
+    Origen       NVARCHAR(200)    NULL,
+    TipoError    NVARCHAR(100)    NULL,
+    Mensaje      NVARCHAR(MAX)    NULL,
+    StackTrace   NVARCHAR(MAX)    NULL,
+    RequestId    NVARCHAR(100)    NULL,
+    IpCliente    NVARCHAR(45)     NULL,
+    FechaError   DATETIMEOFFSET   NOT NULL DEFAULT SYSDATETIMEOFFSET()
 );
 
 
@@ -164,5 +169,23 @@ BEGIN
     UPDATE Usuarios
     SET ContrasenaHash = @ContrasenaHash
     WHERE UsuarioID = @UsuarioID
+END
+GO
+
+CREATE PROCEDURE RegistrarError
+    @UsuarioID    BIGINT         = NULL,
+    @Origen       NVARCHAR(200),
+    @TipoError    NVARCHAR(100),
+    @Mensaje      NVARCHAR(MAX),
+    @StackTrace   NVARCHAR(MAX),
+    @RequestId    NVARCHAR(100),   -- ahora NVARCHAR
+    @IpCliente    NVARCHAR(45)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO LogsErrores
+      (UsuarioID, Origen, TipoError, Mensaje, StackTrace, RequestId, IpCliente)
+    VALUES
+      (@UsuarioID, @Origen, @TipoError, @Mensaje, @StackTrace, @RequestId, @IpCliente);
 END
 GO
