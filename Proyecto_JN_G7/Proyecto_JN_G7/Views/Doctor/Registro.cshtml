@@ -1,0 +1,40 @@
+﻿@model Proyecto_JN_G7.Models.Doctores
+
+@{
+    Layout = "_layoutExterno";
+    ViewData["Title"] = "Registro de Doctor";
+}
+
+<h3 class="card-title text-center mb-4">Registro de Doctor</h3>
+
+@if (ViewBag.Mensaje != null)
+{
+    <div class="alert alert-danger mt-3">@ViewBag.Mensaje</div>
+}
+
+<form asp-action="Registro" method="post" novalidate>
+    <div class="mb-3">
+        <label asp-for="UsuarioID" class="form-label">ID de Usuario</label>
+        <input asp-for="UsuarioID" class="form-control" />
+        <span asp-validation-for="UsuarioID" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Especialidad" class="form-label">Especialidad</label>
+        <input asp-for="Especialidad" class="form-control" />
+        <span asp-validation-for="Especialidad" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="CedulaProfesional" class="form-label">Cédula Profesional</label>
+        <input asp-for="CedulaProfesional" class="form-control" />
+        <span asp-validation-for="CedulaProfesional" class="text-danger"></span>
+    </div>
+
+    <div class="d-grid">
+        <button type="submit" class="btn btn-primary">Registrar</button>
+    </div>
+</form>
+
+<script src="~/js/generales.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
