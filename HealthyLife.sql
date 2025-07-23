@@ -90,6 +90,27 @@ CREATE TABLE CitaTratamientos (
     FOREIGN KEY (TratamientoID) REFERENCES Tratamientos(TratamientoID)
 );
 
+--Tabla: Facturacion
+CREATE TABLE Facturas (
+    FacturaID INT PRIMARY KEY IDENTITY(1,1),
+    PacienteID INT NOT NULL,
+    FechaEmision DATETIME DEFAULT GETDATE(),
+    Total DECIMAL(10,2) NOT NULL,
+    EstadoPago VARCHAR(20) DEFAULT 'Pendiente', -- Pagado, Pendiente, Cancelado
+    FOREIGN KEY (PacienteID) REFERENCES Pacientes(PacienteID)
+);
+--Tabla:DetallesFactura
+CREATE TABLE FacturaDetalles (
+    DetalleID INT PRIMARY KEY IDENTITY(1,1),
+    FacturaID INT NOT NULL,
+    TratamientoID INT NOT NULL,
+    CostoUnitario DECIMAL(10,2),
+    Cantidad INT DEFAULT 1,
+    Subtotal AS (CostoUnitario * Cantidad),
+    FOREIGN KEY (FacturaID) REFERENCES Facturas(FacturaID),
+    FOREIGN KEY (TratamientoID) REFERENCES Tratamientos(TratamientoID)
+);
+
 -- Tabla: Historial M dico
 CREATE TABLE HistorialMedico (
     HistorialID INT PRIMARY KEY IDENTITY(1,1),
