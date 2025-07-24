@@ -10,7 +10,7 @@ namespace Proyecto_JN_G7Api.Models
         public decimal Total { get; set; }
         public string EstadoPago { get; set; } = "Pendiente";
 
-        public Cita Cita { get; set; }
-        public List<FacturaDetalle> Detalles { get; set; }
+        public Cita? Cita { get; set; }
+        //public List<FacturaDetalle> Detalles { get; set; }
     }
 }

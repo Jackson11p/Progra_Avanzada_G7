@@ -21,29 +21,27 @@ namespace Proyecto_JN_G7.Controllers
             _http = http;
             _utilitarios = utilitarios;
         }
-        public async Task<IActionResult> Index()
-        {
-            var usuario = _utilitarios.ObtenerUsuario(HttpContext);
+        //public async Task<IActionResult> Index()
+        //{
+        //    var usuario = _utilitarios.ObtenerUsuario(HttpContext);
 
-            if (usuario == null || usuario.RolID != 3) // Rol 3 = paciente
-            {
-                return RedirectToAction("Index", "Home");
-            }
+        //    if (usuario == null || usuario.RolID != 3) // Rol 3 = paciente
+        //    {
+        //        return RedirectToAction("Index", "Home");
+        //    }
 
-            using var client = _http.CreateClient();
-            client.BaseAddress = new Uri(_configuration.GetValue<string>("Start:ApiUrl"));
+        //    using var client = _http.CreateClient();
+        //    client.BaseAddress = new Uri(_configuration.GetValue<string>("Start:ApiUrl"));
 
-            var response = await client.GetAsync($"api/HistorialMedico/paciente/{usuario.UsuarioID}");
-            if (response.IsSuccessStatusCode)
-            {
-                var historial = await response.Content.ReadFromJsonAsync<List<HistorialMedico>>();
-                return View(historial);
-            }
+        //    var response = await client.GetAsync($"api/HistorialMedico/paciente/{usuario.UsuarioID}");
+        //    if (response.IsSuccessStatusCode)
+        //    {
+        //        var historial = await response.Content.ReadFromJsonAsync<List<HistorialMedico>>();
+        //        return View(historial);
+        //    }
 
-            ViewBag.Mensaje = "No se pudo cargar el historial médico.";
-            return View(new List<HistorialMedico>());
-        }
-    }
-
-       
+        //    ViewBag.Mensaje = "No se pudo cargar el historial médico.";
+        //    return View(new List<HistorialMedico>());
+        //}
+    }     
 }

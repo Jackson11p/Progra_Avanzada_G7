@@ -27,7 +27,7 @@ namespace Proyecto_JN_G7Api.Controllers
         //Registra un paciente
         [HttpPost]
         [Route("Registro")]
-        public IActionResult Registro(Citas model)
+        public IActionResult Registro(Cita model)
         {
             var connectionString = _configuration.GetConnectionString("Connection");
 

@@ -1,6 +1,6 @@
 ﻿namespace Proyecto_JN_G7Api.Models
 {
-    public class Citas
+    public class Cita
     {
         public int PacienteID { get; set; }
 
