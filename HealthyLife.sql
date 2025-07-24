@@ -166,3 +166,96 @@ BEGIN
     WHERE UsuarioID = @UsuarioID
 END
 GO
+
+CREATE PROCEDURE [dbo].[ActualizarUsuario]
+	@Identificacion varchar(20),
+	@Nombre varchar(255),
+	@Correo varchar(100),
+	@IdUsuario bigint
+AS
+BEGIN
+	
+	IF NOT EXISTS(SELECT 1 FROM dbo.TUsuario
+				  WHERE Identificacion = @Identificacion
+					AND Correo = @Correo
+					AND IdUsuario != @IdUsuario)
+	BEGIN
+
+		UPDATE	TUsuario
+		SET		Identificacion = @Identificacion,
+				Nombre = @Nombre,
+				Correo =  @Correo
+		WHERE	IdUsuario = @IdUsuario
+
+	END
+
+END
+GO
+
+CREATE PROCEDURE ConsultarUsuario
+	@IdUsuario BIGINT
+AS
+BEGIN
+
+	SELECT	IdUsuario,
+			Nombre,
+			Correo,
+			Identificacion,
+			Estado,
+			U.IdRol,
+			R.NombreRol
+	  FROM	dbo.TUsuario U
+	  INNER JOIN dbo.TRol R ON U.IdRol = R.IdRol
+	WHERE	IdUsuario = @IdUsuario
+	
+END
+GO
+
+CREATE OR ALTER PROCEDURE ConsultarUsuario
+    @UsuarioID INT
+AS
+BEGIN
+    SELECT 
+        u.UsuarioID,
+        u.Cedula,
+        u.NombreCompleto,
+        u.CorreoElectronico,
+        u.Activo,
+        u.RolID,
+        r.NombreRol
+    FROM 
+        Usuarios u
+    INNER JOIN 
+        Roles r ON u.RolID = r.RolID
+    WHERE 
+        u.UsuarioID = @UsuarioID
+END
+GO
+
+
+CREATE OR ALTER PROCEDURE ActualizarUsuario
+    @UsuarioID INT,
+    @Cedula VARCHAR(50),
+    @NombreCompleto VARCHAR(100),
+    @CorreoElectronico VARCHAR(100)
+AS
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM Usuarios 
+        WHERE 
+            (Cedula = @Cedula OR CorreoElectronico = @CorreoElectronico)
+            AND UsuarioID != @UsuarioID
+    )
+    BEGIN
+        UPDATE Usuarios
+        SET 
+            Cedula = @Cedula,
+            NombreCompleto = @NombreCompleto,
+            CorreoElectronico = @CorreoElectronico
+        WHERE UsuarioID = @UsuarioID
+    END
+END
+GO
+
+SELECT * FROM Usuarios

@@ -48,7 +48,7 @@
 
         <div class="branding d-flex align-items-center">
             <div class="container position-relative d-flex align-items-center justify-content-between">
-                <a href="index.html" class="logo d-flex align-items-center me-auto">
+                <a href="@Url.Action("Index", "Home")" class="logo d-flex align-items-center me-auto">
                     <h1 class="sitename">Healthy Life</h1>
                 </a>
 
@@ -93,7 +93,7 @@
                             @nombre <i class="bi bi-chevron-down"></i>
                         </a>
                         <ul class="dropdown-menu" style="min-width: 90%;">
-                            <li><a class="dropdown-item" asp-controller="Cuenta" asp-action="Perfil">Perfil</a></li>
+                            <li><a class="dropdown-item" asp-controller="Usuarios" asp-action="ActualizarPerfilUsuario">Perfil</a></li>
                             <li><a class="dropdown-item" asp-controller="Account" asp-action="Logout">Cerrar sesión</a></li>
                         </ul>
                     </div>

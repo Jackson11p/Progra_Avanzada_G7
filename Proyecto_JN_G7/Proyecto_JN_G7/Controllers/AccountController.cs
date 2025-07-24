@@ -71,6 +71,7 @@ namespace Proyecto_JN_G7.Controllers
 
                     if (usuario != null)
                     {
+                        HttpContext.Session.SetString("UsuarioID", usuario.UsuarioID.ToString());
                         HttpContext.Session.SetString("NombreCompleto", usuario.NombreCompleto ?? "");
                         HttpContext.Session.SetInt32("RolID", usuario.RolID);
 
