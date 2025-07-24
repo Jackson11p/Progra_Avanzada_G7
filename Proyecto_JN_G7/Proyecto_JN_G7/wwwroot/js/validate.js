@@ -1,85 +1,68 @@
-/**
-* PHP Email Form Validation - v3.9
-* URL: https://bootstrapmade.com/php-email-form/
-* Author: BootstrapMade.com
-*/
-(function () {
-  "use strict";
+// wwwroot/js/validate.js
 
-  let forms = document.querySelectorAll('.php-email-form');
+(() => {
+    'use strict';
 
-  forms.forEach( function(e) {
-    e.addEventListener('submit', function(event) {
-      event.preventDefault();
+    const form = document.getElementById('contactForm');
+    const loading = document.getElementById('loading');
+    const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+    const fields = ['Nombre', 'Email', 'Asunto', 'Mensaje']
+        .map(name => document.getElementById(name));
 
-      let thisForm = this;
-
-      let action = thisForm.getAttribute('action');
-      let recaptcha = thisForm.getAttribute('data-recaptcha-site-key');
-      
-      if( ! action ) {
-        displayError(thisForm, 'The form action property is not set!');
-        return;
-      }
-      thisForm.querySelector('.loading').classList.add('d-block');
-      thisForm.querySelector('.error-message').classList.remove('d-block');
-      thisForm.querySelector('.sent-message').classList.remove('d-block');
-
-      let formData = new FormData( thisForm );
-
-      if ( recaptcha ) {
-        if(typeof grecaptcha !== "undefined" ) {
-          grecaptcha.ready(function() {
-            try {
-              grecaptcha.execute(recaptcha, {action: 'php_email_form_submit'})
-              .then(token => {
-                formData.set('recaptcha-response', token);
-                php_email_form_submit(thisForm, action, formData);
-              })
-            } catch(error) {
-              displayError(thisForm, error);
-            }
-          });
+    function validateField(field) {
+        if (field.checkValidity()) {
+            field.classList.remove('is-invalid');
+            field.classList.add('is-valid');
         } else {
-          displayError(thisForm, 'The reCaptcha javascript API url is not loaded!')
+            field.classList.remove('is-valid');
+            field.classList.add('is-invalid');
         }
-      } else {
-        php_email_form_submit(thisForm, action, formData);
-      }
+    }
+
+    fields.forEach(field => {
+        field.addEventListener('input', () => validateField(field));
     });
-  });
 
-  function php_email_form_submit(thisForm, action, formData) {
-    fetch(action, {
-      method: 'POST',
-      body: formData,
-      headers: {'X-Requested-With': 'XMLHttpRequest'}
-    })
-    .then(response => {
-      if( response.ok ) {
-        return response.text();
-      } else {
-        throw new Error(`${response.status} ${response.statusText} ${response.url}`); 
-      }
-    })
-    .then(data => {
-      thisForm.querySelector('.loading').classList.remove('d-block');
-      if (data.trim() == 'OK') {
-        thisForm.querySelector('.sent-message').classList.add('d-block');
-        thisForm.reset(); 
-      } else {
-        throw new Error(data ? data : 'Form submission failed and no error message returned from: ' + action); 
-      }
-    })
-    .catch((error) => {
-      displayError(thisForm, error);
+    form.addEventListener('submit', async e => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        fields.forEach(f => validateField(f));
+        if (!form.checkValidity()) return;
+
+        const data = {
+            Nombre: form.Nombre.value.trim(),
+            Email: form.Email.value.trim(),
+            Asunto: form.Asunto.value.trim(),
+            Mensaje: form.Mensaje.value.trim()
+        };
+
+        loading.classList.remove('d-none');
+        errorMsg.classList.add('d-none');
+        successMsg.classList.add('d-none');
+
+        try {
+            const resp = await fetch(
+                
+                `${window.ApiBaseUrl}api/Contacto/Enviar`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                }
+            );
+
+            if (!resp.ok) throw new Error(`Error ${resp.status}`);
+
+            successMsg.classList.remove('d-none');
+            form.reset();
+            fields.forEach(f => f.classList.remove('is-valid'));
+        } catch (err) {
+            errorMsg.textContent = 'Ocurrió un problema. Intenta más tarde.';
+            errorMsg.classList.remove('d-none');
+        } finally {
+            loading.classList.add('d-none');
+        }
     });
-  }
-
-  function displayError(thisForm, error) {
-    thisForm.querySelector('.loading').classList.remove('d-block');
-    thisForm.querySelector('.error-message').innerHTML = error;
-    thisForm.querySelector('.error-message').classList.add('d-block');
-  }
-
 })();

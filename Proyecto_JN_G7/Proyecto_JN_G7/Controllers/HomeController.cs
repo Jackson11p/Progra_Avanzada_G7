@@ -13,6 +13,13 @@ namespace Proyecto_JN_G7.Controllers
             _logger = logger;
         }
 
+        [Route("Home/TestError")]
+        public IActionResult TestError()
+        {
+            throw new InvalidOperationException("Error de prueba desde Front-MVC");
+        }
+
+
         public IActionResult Index()
         {
             return View();

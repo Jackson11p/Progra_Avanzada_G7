@@ -50,7 +50,7 @@ CREATE TABLE Pacientes (
     CorreoElectronico VARCHAR(100)
 );
 
--- Tabla: Citas médicas
+-- Tabla: Citas m dicas
 CREATE TABLE Citas (
     CitaID INT PRIMARY KEY IDENTITY(1,1),
     PacienteID INT NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE Citas (
     CONSTRAINT UC_Cita_Unica UNIQUE (DoctorID, FechaHora)
 );
 
--- Tabla: Diagnósticos médicos
+-- Tabla: Diagn sticos m dicos
 CREATE TABLE Diagnosticos (
     DiagnosticoID INT PRIMARY KEY IDENTITY(1,1),
     CitaID INT NOT NULL,
@@ -90,7 +90,28 @@ CREATE TABLE CitaTratamientos (
     FOREIGN KEY (TratamientoID) REFERENCES Tratamientos(TratamientoID)
 );
 
--- Tabla: Historial Médico
+--Tabla: Facturacion
+CREATE TABLE Facturas (
+    FacturaID INT PRIMARY KEY IDENTITY(1,1),
+    PacienteID INT NOT NULL,
+    FechaEmision DATETIME DEFAULT GETDATE(),
+    Total DECIMAL(10,2) NOT NULL,
+    EstadoPago VARCHAR(20) DEFAULT 'Pendiente', -- Pagado, Pendiente, Cancelado
+    FOREIGN KEY (PacienteID) REFERENCES Pacientes(PacienteID)
+);
+--Tabla:DetallesFactura
+CREATE TABLE FacturaDetalles (
+    DetalleID INT PRIMARY KEY IDENTITY(1,1),
+    FacturaID INT NOT NULL,
+    TratamientoID INT NOT NULL,
+    CostoUnitario DECIMAL(10,2),
+    Cantidad INT DEFAULT 1,
+    Subtotal AS (CostoUnitario * Cantidad),
+    FOREIGN KEY (FacturaID) REFERENCES Facturas(FacturaID),
+    FOREIGN KEY (TratamientoID) REFERENCES Tratamientos(TratamientoID)
+);
+
+-- Tabla: Historial M dico
 CREATE TABLE HistorialMedico (
     HistorialID INT PRIMARY KEY IDENTITY(1,1),
     PacienteID INT NOT NULL,
@@ -102,12 +123,17 @@ CREATE TABLE HistorialMedico (
     FOREIGN KEY (DiagnosticoID) REFERENCES Diagnosticos(DiagnosticoID)
 );
 
--- Tabla de Logs de Errores
+--Tablo Errores
 CREATE TABLE LogsErrores (
-    ErrorID BIGINT PRIMARY KEY IDENTITY(1,1),
-    UsuarioID BIGINT NULL,
-    Mensaje NVARCHAR(MAX),
-    FechaError DATETIME DEFAULT GETDATE()
+    ErrorID      BIGINT           PRIMARY KEY IDENTITY(1,1),
+    UsuarioID    BIGINT           NULL,
+    Origen       NVARCHAR(200)    NULL,
+    TipoError    NVARCHAR(100)    NULL,
+    Mensaje      NVARCHAR(MAX)    NULL,
+    StackTrace   NVARCHAR(MAX)    NULL,
+    RequestId    NVARCHAR(100)    NULL,
+    IpCliente    NVARCHAR(45)     NULL,
+    FechaError   DATETIMEOFFSET   NOT NULL DEFAULT SYSDATETIMEOFFSET()
 );
 
 
@@ -258,4 +284,20 @@ BEGIN
 END
 GO
 
-SELECT * FROM Usuarios
+CREATE PROCEDURE RegistrarError
+    @UsuarioID    BIGINT         = NULL,
+    @Origen       NVARCHAR(200),
+    @TipoError    NVARCHAR(100),
+    @Mensaje      NVARCHAR(MAX),
+    @StackTrace   NVARCHAR(MAX),
+    @RequestId    NVARCHAR(100),   -- ahora NVARCHAR
+    @IpCliente    NVARCHAR(45)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO LogsErrores
+      (UsuarioID, Origen, TipoError, Mensaje, StackTrace, RequestId, IpCliente)
+    VALUES
+      (@UsuarioID, @Origen, @TipoError, @Mensaje, @StackTrace, @RequestId, @IpCliente);
+END
+GO
