@@ -1,0 +1,48 @@
+﻿@model List<Proyecto_JN_G7.Models.Factura>
+
+    @{
+    ViewData["Title"] = "Mis Facturas";
+    Layout = "_Layout";
+    }
+
+    <h2 class="text-center mb-4">Mis Facturas</h2>
+
+    @if (!string.IsNullOrEmpty(ViewBag.Mensaje))
+{
+    <div class="alert alert-warning text-center">
+        @ViewBag.Mensaje
+    </div>
+}
+
+    @if (Model != null && Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Total</th>
+                    <th scope="col">Método de Pago</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var factura in Model)
+                {
+                <tr>
+                    <td>@factura.FacturaID</td>
+                    <td>@factura.Fecha.ToString("dd/MM/yyyy")</td>
+                    <td>₡@factura.Total.ToString("N2")</td>
+                    <td>@factura.MetodoPago</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center">
+        <p class="text-muted">No tienes facturas registradas.</p>
+    </div>
+}
