@@ -343,3 +343,59 @@ BEGIN
     JOIN Pacientes p ON p.PacienteID = c.PacienteID
     WHERE f.FacturaID = @FacturaID
 END
+
+
+--Metodos Erick
+
+--Registra un doctor
+GO
+CREATE OR ALTER   PROCEDURE [dbo].[RegistrarDcotor]
+    @UsuarioID int,
+    @Especialidad VARCHAR(100),
+    @CedulaProfesional VARCHAR(20)    
+AS
+BEGIN
+	INSERT INTO Doctores (UsuarioID, Especialidad, CedulaProfesional)
+    VALUES (@UsuarioID, @Especialidad, @CedulaProfesional);
+    
+END
+
+--Registra una cita
+GO
+CREATE OR ALTER PROCEDURE [dbo].[RegistrarCita]    
+    @PacienteID INT,
+    @DoctorID INT,
+    @FechaHora DATETIME,
+    @Estado VARCHAR(30),
+    @MotivoConsulta VARCHAR(255),
+    @FechaCreacion DATETIME
+AS
+BEGIN
+    -- Ver si una cita existe
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM Citas 
+        WHERE DoctorID = @DoctorID AND FechaHora = @FechaHora
+    )
+    BEGIN
+        -- Si no, guard la cita
+        INSERT INTO Citas (PacienteID, DoctorID, FechaHora, Estado, MotivoConsulta, FechaCreacion)
+        VALUES (@PacienteID, @DoctorID, @FechaHora, @Estado, @MotivoConsulta, @FechaCreacion);
+    END
+END
+
+
+--Registra un paciente
+GO
+CREATE OR ALTER PROCEDURE [dbo].[RegistrarPaciente]    
+    @NombreCompleto VARCHAR(100),
+    @FechaNacimiento date,
+    @Genero VARCHAR(10),
+    @Direccion VARCHAR(200),
+    @Telefono VARCHAR(20),
+    @CorreoElectronico VARCHAR(100)
+AS
+BEGIN
+	INSERT INTO Pacientes (NombreCompleto, FechaNacimiento, Genero, Direccion, Telefono, CorreoElectronico)
+    VALUES (@NombreCompleto, @FechaNacimiento, @Genero, @Direccion, @Telefono, @CorreoElectronico);    
+END
