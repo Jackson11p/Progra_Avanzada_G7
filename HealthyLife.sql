@@ -301,3 +301,45 @@ BEGIN
       (@UsuarioID, @Origen, @TipoError, @Mensaje, @StackTrace, @RequestId, @IpCliente);
 END
 GO
+
+CREATE PROCEDURE ConsultarHistorialPorPaciente
+    @PacienteID INT
+AS
+BEGIN
+    SELECT h.HistorialID, h.FechaRegistro, d.NombreCompleto AS NombreDoctor, diag.Descripcion
+    FROM HistorialMedico h
+    JOIN Doctores d ON d.DoctorID = h.DoctorID
+    JOIN Diagnosticos diag ON diag.DiagnosticoID = h.DiagnosticoID
+    WHERE h.PacienteID = @PacienteID
+END
+
+CREATE PROCEDURE RegistrarHistorial
+    @PacienteID INT,
+    @DoctorID INT,
+    @DiagnosticoID INT
+AS
+BEGIN
+    INSERT INTO HistorialMedico (PacienteID, DoctorID, DiagnosticoID, FechaRegistro)
+    VALUES (@PacienteID, @DoctorID, @DiagnosticoID, GETDATE())
+END
+
+CREATE PROCEDURE CrearFactura
+    @CitaID INT,
+    @Total DECIMAL(10,2),
+    @EstadoPago VARCHAR(20)
+AS
+BEGIN
+    INSERT INTO Facturas (CitaID, Total, EstadoPago, FechaEmision)
+    VALUES (@CitaID, @Total, @EstadoPago, GETDATE())
+END
+
+CREATE PROCEDURE ConsultarFactura
+    @FacturaID INT
+AS
+BEGIN
+    SELECT f.FacturaID, f.Total, f.EstadoPago, f.FechaEmision, c.PacienteID, p.NombreCompleto AS Paciente
+    FROM Facturas f
+    JOIN Citas c ON c.CitaID = f.CitaID
+    JOIN Pacientes p ON p.PacienteID = c.PacienteID
+    WHERE f.FacturaID = @FacturaID
+END
