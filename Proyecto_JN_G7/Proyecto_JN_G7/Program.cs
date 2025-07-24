@@ -17,7 +17,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseSession();
 
-app.UseExceptionHandler("/Home/Error");
+app.UseExceptionHandler("/Error");
 
 app.UseHttpsRedirection();
 

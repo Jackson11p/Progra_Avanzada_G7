@@ -1,0 +1,44 @@
+﻿@model Autenticacion
+@{
+    Layout = "_Layout";
+}
+<section id="appointment" class="appointment section">
+    <div class="container section-title" data-aos="fade-up">
+        <h2>Actualizar Perfil</h2>
+        <p>Modifica tus datos personales para mantener tu información actualizada.</p>
+    </div>
+
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <form asp-controller="Usuarios" asp-action="ActualizarPerfilUsuario" method="post" @* class="php-email-form" *@>
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label for="Cedula">Cédula</label>
+                    <input asp-for="Cedula" class="form-control" placeholder="Ingrese su cédula" required />
+                    <span asp-validation-for="Cedula" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 form-group mt-3 mt-md-0">
+                    <label for="NombreCompleto">Nombre Completo</label>
+                    <input asp-for="NombreCompleto" class="form-control" placeholder="Ingrese su nombre completo" required />
+                    <span asp-validation-for="NombreCompleto" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-6 form-group">
+                    <label for="CorreoElectronico">Correo Electrónico</label>
+                    <input asp-for="CorreoElectronico" type="email" class="form-control" placeholder="Ingrese su correo electrónico" required />
+                    <span asp-validation-for="CorreoElectronico" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="NombreRol">Rol de Usuario</label>
+                    <input asp-for="NombreRol" class="form-control bg-light" readonly />
+                </div>
+            </div>
+
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-primary rounded-pill py-2 px-4">Procesar</button>
+            </div>
+        </form>
+    </div>
+</section>
