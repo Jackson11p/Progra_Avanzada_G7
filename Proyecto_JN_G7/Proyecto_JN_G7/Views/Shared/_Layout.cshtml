@@ -21,6 +21,9 @@
     <link href="~/css/main.css" rel="stylesheet">
 </head>
 
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+
 @{
     var nombre = Context.Session.GetString("NombreCompleto");
 }
@@ -122,7 +125,10 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="~/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/validate.js"></script>
+    <script>
+        window.ApiBaseUrl = '@Configuration["Start:ApiUrl"]';
+    </script>
+    <script src="~/js/validate.js" defer asp-append-version="true"></script>
     <script src="~/js/aos.js"></script>
     <script src="~/js/glightbox.min.js"></script>
     <script src="~/js/purecounter_vanilla.js"></script>

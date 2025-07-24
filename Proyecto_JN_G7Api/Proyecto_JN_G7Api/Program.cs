@@ -6,8 +6,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IUtilitarios, Utilitarios>();
+builder.Services.AddCors(opts =>
+{
+    opts.AddDefaultPolicy(policy =>
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
 
 var app = builder.Build();
+app.UseCors();
 
 if (app.Environment.IsDevelopment())
 {
