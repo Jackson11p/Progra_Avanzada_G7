@@ -1,6 +1,204 @@
-﻿<div class="card">
-    <div class="card-header"><i class="bi bi-calendar2-check me-1"></i> Citas</div>
-    <div class="card-body">
-        <p class="text-muted">Aquí irá el listado/CRUD de citas.</p>
+﻿@model IEnumerable<Proyecto_JN_G7.Models.CitaUnificada>
+
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <div class="fw-semibold">
+            <i class="bi bi-calendar2-check me-1"></i> Citas (todas)
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-primary" data-action="new-cita">
+                <i class="bi bi-plus-circle"></i> Nueva Cita
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary"
+                    onclick="const a=document.querySelector('#adminSidebar [data-partial=&quot;Citas&quot;]'); if(a) a.click();">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Tipo</th>
+                    <th>Fecha/Hora</th>
+                    <th>Paciente</th>
+                    <th>Doctor</th>
+                    <th>Estado</th>
+                    <th>Motivo</th>
+                    <th>Contacto</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="8" class="text-center text-muted py-4">No hay registros.</td></tr>
+                }
+                else
+                {
+                    foreach (var x in Model)
+                    {
+                        var isCita = string.Equals(x.Tipo, "Cita", StringComparison.OrdinalIgnoreCase);
+                        var isoFecha = x.FechaHora.ToString("yyyy-MM-ddTHH:mm");
+                        <tr>
+                            <td>
+                                @if (isCita)
+                                {
+                                    <span class="badge text-bg-primary">Cita</span>
+                                }
+                                else
+                                {
+
+                                    <span class="badge text-bg-warning text-dark">Solicitud</span>
+                                }
+                            </td>
+                            <td>
+                                @x.FechaHora.ToString("dd/MM/yyyy HH:mm")
+                                <div class="text-muted small">Reg.: @x.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</div>
+                            </td>
+                            <td>@(isCita ? $"PacienteID: {x.PacienteID}" : x.PacienteNombre)</td>
+                            <td>@(isCita ? $"DoctorID: {x.DoctorID}" : x.DoctorNombre)</td>
+                            <td>@x.Estado</td>
+                            <td class="text-truncate" style="max-width:260px;">@x.Motivo</td>
+                            <td class="small">
+                                @if (!isCita)
+                                {
+                                    <div><i class="bi bi-envelope me-1"></i>@x.Email</div>
+                                    <div><i class="bi bi-telephone me-1"></i>@x.Telefono</div>
+                                }
+                            </td>
+                            <td>
+                                @if (isCita)
+                                {
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-secondary"
+                                                data-action="edit-cita"
+                                                data-cita-id="@x.CitaID"
+                                                data-paciente-id="@x.PacienteID"
+                                                data-doctor-id="@x.DoctorID"
+                                                data-fecha="@isoFecha"
+                                                data-estado="@x.Estado"
+                                                data-motivo="@x.Motivo">
+                                            <i class="bi bi-pencil-square"></i> Editar
+                                        </button>
+                                        <button class="btn btn-outline-danger"
+                                                data-action="delete-cita"
+                                                data-cita-id="@x.CitaID">
+                                            <i class="bi bi-trash"></i> Eliminar
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-success"
+                                                data-action="attend-solicitud"
+                                                data-solicitud-id="@x.SolicitudID"
+                                                data-motivo="@x.Motivo">
+                                            <i class="bi bi-check2-circle"></i> Atender
+                                        </button>
+                                        <button class="btn btn-outline-secondary"
+                                                data-action="delete-solicitud"
+                                                data-solicitud-id="@x.SolicitudID">
+                                            <i class="bi bi-x-circle"></i> Descartar
+                                        </button>
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
     </div>
 </div>
+
+<!-- Modal: crear/editar cita -->
+<div class="modal fade" id="modalCita" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" id="formCita">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCitaTitle">Cita</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="citaId">
+
+                <div class="mb-2">
+                    <label class="form-label">PacienteID</label>
+                    <input type="number" class="form-control" id="pacienteId" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">DoctorID</label>
+                    <input type="number" class="form-control" id="doctorId" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Fecha y hora</label>
+                    <input type="datetime-local" class="form-control" id="fechaHora" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Estado</label>
+                    <select class="form-select" id="estado">
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Confirmada">Confirmada</option>
+                        <option value="Cancelada">Cancelada</option>
+                    </select>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label">Motivo</label>
+                    <textarea class="form-control" id="motivo" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: atender solicitud -->
+<div class="modal fade" id="modalAtender" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" id="formAtender">
+            <div class="modal-header">
+                <h5 class="modal-title">Atender solicitud</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="solicitudId">
+
+                <div class="mb-2">
+                    <label class="form-label">PacienteID</label>
+                    <input type="number" class="form-control" id="a_pacienteId" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">DoctorID</label>
+                    <input type="number" class="form-control" id="a_doctorId" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Fecha y hora</label>
+                    <input type="datetime-local" class="form-control" id="a_fechaHora" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Estado</label>
+                    <select class="form-select" id="a_estado">
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Confirmada">Confirmada</option>
+                        <option value="Cancelada">Cancelada</option>
+                    </select>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label">Motivo</label>
+                    <textarea class="form-control" id="a_motivo" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+                <button class="btn btn-success" type="submit">Crear cita</button>
+            </div>
+        </form>
+    </div>
+</div>
+

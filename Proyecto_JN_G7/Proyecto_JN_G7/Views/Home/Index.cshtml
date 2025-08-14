@@ -270,16 +270,8 @@
                 </div>
 
                 <div class="col-md-4 form-group mt-3">
-                    <!-- OPCIONAL -->
-                    <select name="doctor" id="doctor" class="form-select">
-                        <option value="">Sin preferencia de médico</option>
-                        <option value="Laura Gómez">Dra. Laura Gómez — Medicina General</option>
-                        <option value="Ricardo Solís">Dr. Ricardo Solís — Cardiología</option>
-                        <option value="Sofía Herrera">Dra. Sofía Herrera — Pediatría</option>
-                        <option value="Andrés Mora">Dr. Andrés Mora — Ortopedia</option>
-                        <option value="Paula Rojas">Dra. Paula Rojas — Ginecología</option>
-                        <option value="Diego Campos">Dr. Diego Campos — Dermatología</option>
-                    </select>
+                    @await Html.PartialAsync("Partials/_SelectDoctor",
+                    (IEnumerable<Proyecto_JN_G7.Models.DoctorListItem>)(ViewBag.Doctores ?? new List<Proyecto_JN_G7.Models.DoctorListItem>()))
                 </div>
             </div>
 

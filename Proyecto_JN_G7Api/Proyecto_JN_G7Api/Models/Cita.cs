@@ -2,6 +2,7 @@
 {
     public class Cita
     {
+        public int CitaID { get; set; }
         public int PacienteID { get; set; }
 
         public int DoctorID { get; set; }

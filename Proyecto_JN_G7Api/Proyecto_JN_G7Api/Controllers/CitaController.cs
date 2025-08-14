@@ -84,5 +84,83 @@ namespace Proyecto_JN_G7Api.Controllers
                 "¡Tu solicitud de cita fue enviada! Te contactaremos pronto para confirmar la disponibilidad."
             ));
         }
+
+        [HttpGet("Unificada")]
+        public IActionResult Unificada()
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var data = conn.Query<CitaUnificada>(
+                "Cita_Listar_Unificada",
+                commandType: CommandType.StoredProcedure);
+            return Ok(data);
+        }
+
+        [HttpPost] 
+        public IActionResult Crear([FromBody] Models.Cita model)
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var newId = conn.QuerySingle<int>("Cita_Crear", new
+            {
+                model.PacienteID,
+                model.DoctorID,
+                model.FechaHora,
+                model.Estado,
+                model.MotivoConsulta
+            }, commandType: CommandType.StoredProcedure);
+            return Ok(new { CitaID = newId });
+        }
+
+        [HttpPut("{id:int}")]
+        public IActionResult Actualizar(int id, [FromBody] Models.Cita model)
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var afectados = conn.QuerySingle<int>("Cita_Actualizar", new
+            {
+                CitaID = id,
+                model.PacienteID,
+                model.DoctorID,
+                model.FechaHora,
+                model.Estado,
+                model.MotivoConsulta
+            }, commandType: CommandType.StoredProcedure);
+
+            if (afectados == 0) return NotFound("No existe la cita.");
+            return NoContent();
+        }
+
+        [HttpDelete("{id:int}")] 
+        public IActionResult Eliminar(int id)
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var afectados = conn.QuerySingle<int>("Cita_Eliminar", new { CitaID = id }, commandType: CommandType.StoredProcedure);
+            if (afectados == 0) return NotFound("No existe la cita.");
+            return NoContent();
+        }
+
+        [HttpPost("Solicitudes/{solicitudId:long}/Atender")]
+        public IActionResult AtenderSolicitud(long solicitudId, [FromBody] AtenderSolicitud body)
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var newId = conn.QuerySingle<int>("CitaPublica_Atender", new
+            {
+                SolicitudID = solicitudId,
+                body.PacienteID,
+                body.DoctorID,
+                body.FechaHora,
+                body.Estado,
+                body.MotivoConsulta
+            }, commandType: CommandType.StoredProcedure);
+
+            return Ok(new { CitaID = newId, Mensaje = "Solicitud atendida y convertida a cita." });
+        }
+
+        [HttpDelete("Solicitudes/{solicitudId:long}")]
+        public IActionResult EliminarSolicitud(long solicitudId)
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var afectados = conn.QuerySingle<int>("CitaPublica_Eliminar", new { SolicitudID = solicitudId }, commandType: CommandType.StoredProcedure);
+            if (afectados == 0) return NotFound("No existe la solicitud.");
+            return NoContent();
+        }
     }
 }

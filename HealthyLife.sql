@@ -434,3 +434,198 @@ BEGIN
 END
 GO
 
+CREATE OR ALTER PROCEDURE Cita_Listar_Unificada
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT
+      CAST(N'Cita' AS NVARCHAR(10))          AS Tipo,
+      c.CitaID                                AS CitaID,
+      CAST(NULL AS BIGINT)                    AS SolicitudID,      
+      c.PacienteID                            AS PacienteID,
+      CAST(NULL AS NVARCHAR(150))             AS PacienteNombre,   
+      c.DoctorID                              AS DoctorID,
+      CAST(NULL AS NVARCHAR(150))             AS DoctorNombre,     
+      CAST(c.FechaHora AS DATETIME2)          AS FechaHora,
+      c.Estado                                AS Estado,
+      c.MotivoConsulta                        AS Motivo,
+      CAST(NULL AS NVARCHAR(150))             AS Email,
+      CAST(NULL AS NVARCHAR(50))              AS Telefono,
+      CAST(c.FechaCreacion AS DATETIME2)      AS FechaRegistro
+  FROM Citas c
+
+  UNION ALL
+
+  SELECT
+      CAST(N'Solicitud' AS NVARCHAR(10))      AS Tipo,
+      CAST(NULL AS INT)                       AS CitaID,           
+      cp.Id                                   AS SolicitudID,
+      CAST(NULL AS INT)                       AS PacienteID,
+      cp.Nombre                               AS PacienteNombre,
+      CAST(NULL AS INT)                       AS DoctorID,
+      cp.DoctorNombre                         AS DoctorNombre,
+      CAST(cp.FechaHoraPreferida AS DATETIME2)AS FechaHora,
+      CAST(N'Pendiente' AS NVARCHAR(30))      AS Estado,           
+      cp.Mensaje                               AS Motivo,
+      cp.Email                                 AS Email,
+      cp.Telefono                              AS Telefono,
+      CAST(cp.FechaSolicitud AS DATETIME2)     AS FechaRegistro
+  FROM CitasPublicas cp
+
+  ORDER BY FechaHora DESC;
+END
+GO
+
+-- CREAR
+CREATE OR ALTER PROCEDURE Cita_Crear
+  @PacienteID INT,
+  @DoctorID INT,
+  @FechaHora DATETIME2,
+  @Estado NVARCHAR(20),
+  @MotivoConsulta NVARCHAR(MAX)
+AS
+BEGIN
+  SET NOCOUNT ON;
+  INSERT INTO Citas(PacienteID,DoctorID,FechaHora,Estado,MotivoConsulta,FechaCreacion)
+  VALUES(@PacienteID,@DoctorID,@FechaHora,@Estado,@MotivoConsulta,SYSUTCDATETIME());
+  SELECT CAST(SCOPE_IDENTITY() AS INT) AS CitaID;
+END
+GO
+
+-- ACTUALIZAR
+CREATE OR ALTER PROCEDURE Cita_Actualizar
+  @CitaID INT,
+  @PacienteID INT,
+  @DoctorID INT,
+  @FechaHora DATETIME2,
+  @Estado NVARCHAR(20),
+  @MotivoConsulta NVARCHAR(MAX)
+AS
+BEGIN
+  SET NOCOUNT ON;
+  UPDATE Citas
+    SET PacienteID=@PacienteID,
+        DoctorID=@DoctorID,
+        FechaHora=@FechaHora,
+        Estado=@Estado,
+        MotivoConsulta=@MotivoConsulta
+  WHERE CitaID=@CitaID;
+  SELECT @@ROWCOUNT AS Afectados;
+END
+GO
+
+-- ELIMINAR
+CREATE OR ALTER PROCEDURE Cita_Eliminar
+  @CitaID INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+  DELETE FROM Citas WHERE CitaID=@CitaID;
+  SELECT @@ROWCOUNT AS Afectados;
+END
+GO
+
+-- OBTENER
+CREATE OR ALTER PROCEDURE Cita_Obtener
+  @CitaID INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT CitaID, PacienteID, DoctorID, FechaHora, Estado, MotivoConsulta, FechaCreacion
+  FROM Citas WHERE CitaID=@CitaID;
+END
+GO
+
+
+-- ATENDER: crea cita y elimina la solicitud
+CREATE OR ALTER PROCEDURE CitaPublica_Atender
+  @SolicitudID BIGINT,
+  @PacienteID INT,
+  @DoctorID INT,
+  @FechaHora DATETIME2,
+  @Estado NVARCHAR(20) = 'Pendiente',
+  @MotivoConsulta NVARCHAR(MAX) = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+  BEGIN TRY
+    BEGIN TRAN;
+
+    DECLARE @Motivo NVARCHAR(MAX);
+    SELECT @Motivo = ISNULL(@MotivoConsulta, Mensaje)
+    FROM CitasPublicas WHERE Id = @SolicitudID;
+
+    INSERT INTO Citas(PacienteID,DoctorID,FechaHora,Estado,MotivoConsulta,FechaCreacion)
+    VALUES(@PacienteID,@DoctorID,@FechaHora,@Estado,@Motivo,SYSUTCDATETIME());
+
+    DECLARE @NewCitaID INT = CAST(SCOPE_IDENTITY() AS INT);
+
+    DELETE FROM CitasPublicas WHERE Id = @SolicitudID;
+
+    COMMIT;
+    SELECT @NewCitaID AS CitaID;
+  END TRY
+  BEGIN CATCH
+    IF XACT_STATE() <> 0 ROLLBACK;
+    THROW;
+  END CATCH
+END
+GO
+
+-- DESCARTAR solicitud
+CREATE OR ALTER PROCEDURE CitaPublica_Eliminar
+  @SolicitudID BIGINT
+AS
+BEGIN
+  SET NOCOUNT ON;
+  DELETE FROM CitasPublicas WHERE Id=@SolicitudID;
+  SELECT @@ROWCOUNT AS Afectados;
+END
+GO
+
+-- Rol Doctor
+DECLARE @RolDoctor INT = (SELECT RolID FROM Roles WHERE NombreRol = 'Doctor');
+
+-- 1) Dra. Laura Gómez — Medicina General
+INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+VALUES ('DOC-1001', 'Laura Gómez', 'laura.gomez@healthylife.test', 'temp', @RolDoctor, 1);
+DECLARE @U1 INT = SCOPE_IDENTITY();
+INSERT INTO Doctores (UsuarioID, Especialidad, CedulaProfesional)
+VALUES (@U1, 'Medicina General', 'MG-001');
+
+-- 2) Dr. Ricardo Solís — Cardiología
+INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+VALUES ('DOC-1002', 'Ricardo Solís', 'ricardo.solis@healthylife.test', 'temp', @RolDoctor, 1);
+DECLARE @U2 INT = SCOPE_IDENTITY();
+INSERT INTO Doctores (UsuarioID, Especialidad, CedulaProfesional)
+VALUES (@U2, 'Cardiología', 'CAR-002');
+
+-- 3) Dra. Sofía Herrera — Pediatría
+INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+VALUES ('DOC-1003', 'Sofía Herrera', 'sofia.herrera@healthylife.test', 'temp', @RolDoctor, 1);
+DECLARE @U3 INT = SCOPE_IDENTITY();
+INSERT INTO Doctores (UsuarioID, Especialidad, CedulaProfesional)
+VALUES (@U3, 'Pediatría', 'PED-003');
+
+-- 4) Dr. Andrés Mora — Ortopedia
+INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+VALUES ('DOC-1004', 'Andrés Mora', 'andres.mora@healthylife.test', 'temp', @RolDoctor, 1);
+DECLARE @U4 INT = SCOPE_IDENTITY();
+INSERT INTO Doctores (UsuarioID, Especialidad, CedulaProfesional)
+VALUES (@U4, 'Ortopedia', 'ORT-004');
+
+-- 5) Dra. Paula Rojas — Ginecología
+INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+VALUES ('DOC-1005', 'Paula Rojas', 'paula.rojas@healthylife.test', 'temp', @RolDoctor, 1);
+DECLARE @U5 INT = SCOPE_IDENTITY();
+INSERT INTO Doctores (UsuarioID, Especialidad, CedulaProfesional)
+VALUES (@U5, 'Ginecología', 'GIN-005');
+
+-- 6) Dr. Diego Campos — Dermatología
+INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+VALUES ('DOC-1006', 'Diego Campos', 'diego.campos@healthylife.test', 'temp', @RolDoctor, 1);
+DECLARE @U6 INT = SCOPE_IDENTITY();
+INSERT INTO Doctores (UsuarioID, Especialidad, CedulaProfesional)
+VALUES (@U6, 'Dermatología', 'DER-006');
+
