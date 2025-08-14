@@ -1,123 +1,134 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Proyecto_JN_G7.Models;
 using Proyecto_JN_G7.Services;
-using Microsoft.AspNetCore.Http;
+using System.Net.Http.Json;
 
 namespace Proyecto_JN_G7.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly IConfiguration _configuration;
         private readonly IHttpClientFactory _http;
         private readonly IUtilitarios _utilitarios;
-        public AccountController(IConfiguration configuration, IHttpClientFactory http, IUtilitarios utilitarios)
+
+        public AccountController(IHttpClientFactory http, IUtilitarios utilitarios)
         {
-            _configuration = configuration;
             _http = http;
             _utilitarios = utilitarios;
         }
 
         #region Registro
         [HttpGet]
-        public IActionResult Registro()
-        {
-            return View();
-        }
+        public IActionResult Registro() => View();
 
         [HttpPost]
-        public IActionResult Registro(Autenticacion model)
+        public async Task<IActionResult> Registro(Autenticacion model)
         {
+            // Mantén tu comportamiento actual: la API espera la contraseña "encriptada"
             model.ContrasenaHash = _utilitarios.Encrypt(model.ContrasenaHash!);
-            using (var http = _http.CreateClient())
-            {
-                http.BaseAddress = new Uri(_configuration.GetSection("Start:ApiUrl").Value!);
-                var resultado = http.PostAsJsonAsync("api/Account/Registro", model).Result;
 
-                if (resultado.IsSuccessStatusCode)
-                {
-                    return RedirectToAction("Login", "Account");
-                }
-                else
-                {
-                    var respuesta = resultado.Content.ReadFromJsonAsync<RespuestaEstandar>().Result;
-                    ViewBag.Mensaje = respuesta?.Mensaje;
-                    return View();
-                }
-            }
+            var client = _http.CreateClient("Api");
+            var resp = await client.PostAsJsonAsync("api/Account/Registro", model);
+
+            if (resp.IsSuccessStatusCode)
+                return RedirectToAction("Login", "Account");
+
+            var respuesta = await resp.Content.ReadFromJsonAsync<RespuestaEstandar>();
+            ViewBag.Mensaje = respuesta?.Mensaje;
+            return View();
         }
         #endregion
 
-        #region Iniciar Sesion
+        #region Iniciar Sesión (usando tu endpoint actual)
         [HttpGet]
-        public IActionResult Login()
-        {
-            return View();
-        }
+        public IActionResult Login() => View();
 
         [HttpPost]
-        public IActionResult Login(Autenticacion model)
+        public async Task<IActionResult> Login(Autenticacion model)
         {
+            // La API actual usa tu "Encrypt", así que lo mantenemos
             model.ContrasenaHash = _utilitarios.Encrypt(model.ContrasenaHash!);
 
-            using (var http = _http.CreateClient())
+            var client = _http.CreateClient("Api");
+            var resp = await client.PostAsJsonAsync("api/Account/Login", model);
+
+            var contentType = resp.Content.Headers.ContentType?.MediaType ?? "";
+            var raw = await resp.Content.ReadAsStringAsync();
+
+            if (!resp.IsSuccessStatusCode)
             {
-                http.BaseAddress = new Uri(_configuration.GetSection("Start:ApiUrl").Value!);
-                var resultado = http.PostAsJsonAsync("api/Account/Login", model).Result;
-
-                if (resultado.IsSuccessStatusCode)
+                if (contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase))
                 {
-                    var usuario = resultado.Content.ReadFromJsonAsync<Autenticacion>().Result;
-
-                    if (usuario != null)
-                    {
-                        HttpContext.Session.SetString("UsuarioID", usuario.UsuarioID.ToString());
-                        HttpContext.Session.SetString("NombreCompleto", usuario.NombreCompleto ?? "");
-                        HttpContext.Session.SetInt32("RolID", usuario.RolID);
-
-                        return RedirectToAction("Index", "Home");
-                    }
+                    var respuesta = System.Text.Json.JsonSerializer.Deserialize<RespuestaEstandar>(raw);
+                    ViewBag.Mensaje = respuesta?.Mensaje ?? "Credenciales inválidas";
                 }
-
-                var respuesta = resultado.Content.ReadFromJsonAsync<RespuestaEstandar>().Result;
-                ViewBag.Mensaje = respuesta?.Mensaje;
+                else
+                {
+                    ViewBag.Mensaje = string.IsNullOrWhiteSpace(raw) ? "Credenciales inválidas" : raw;
+                }
                 return View();
             }
+
+            // Éxito: la API devuelve Autenticacion (como lo tenías)
+            Autenticacion? usuario = null;
+            try
+            {
+                usuario = System.Text.Json.JsonSerializer.Deserialize<Autenticacion>(raw,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch
+            {
+                ViewBag.Mensaje = "Respuesta inesperada del servidor.";
+                return View();
+            }
+
+            if (usuario == null)
+            {
+                ViewBag.Mensaje = "No se pudo obtener la información del usuario.";
+                return View();
+            }
+
+            // Guardar en Session (igual que antes)
+            HttpContext.Session.SetString("UsuarioID", usuario.UsuarioID.ToString());
+            HttpContext.Session.SetString("NombreCompleto", usuario.NombreCompleto ?? "");
+            HttpContext.Session.SetInt32("RolID", usuario.RolID);
+
+            // Mapear RolID -> string para el panel admin
+            var rolNombre = usuario.RolID == 3 ? "Administrador"
+                         : usuario.RolID == 2 ? "Doctor"
+                         : "Usuario";
+            HttpContext.Session.SetString("ROL", rolNombre);
+
+            // Si es admin, redirigir al panel
+            if (rolNombre.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+                return RedirectToAction("Index", "Admin");
+
+            return RedirectToAction("Index", "Home");
         }
         #endregion
 
         #region Recuperar Acceso
-
         [HttpGet]
-        public IActionResult RecuperarAcceso()
-        {
-            return View();
-        }
+        public IActionResult RecuperarAcceso() => View();
 
         [HttpPost]
-        public IActionResult RecuperarAcceso(Autenticacion model)
+        public async Task<IActionResult> RecuperarAcceso(Autenticacion model)
         {
-            using (var http = _http.CreateClient())
-            {
-                http.BaseAddress = new Uri(_configuration.GetSection("Start:ApiUrl").Value!);
-                var resultado = http.PostAsJsonAsync("api/Account/RecuperarAcceso", model).Result;
+            if (!string.IsNullOrEmpty(model.ContrasenaHash))
+                model.ContrasenaHash = _utilitarios.Encrypt(model.ContrasenaHash);
 
-                if (resultado.IsSuccessStatusCode)
-                {
-                    return RedirectToAction("Login", "Account");
-                }
-                else
-                {
-                    var respuesta = resultado.Content.ReadFromJsonAsync<RespuestaEstandar>().Result;
-                    ViewBag.Mensaje = respuesta?.Mensaje;
-                    return View();
-                }
-            }
+            var client = _http.CreateClient("Api");
+            var resp = await client.PostAsJsonAsync("api/Account/RecuperarAcceso", model);
+
+            if (resp.IsSuccessStatusCode)
+                return RedirectToAction("Login", "Account");
+
+            var respuesta = await resp.Content.ReadFromJsonAsync<RespuestaEstandar>();
+            ViewBag.Mensaje = respuesta?.Mensaje;
+            return View();
         }
-
         #endregion
 
-        #region Cerrar Sesion
+        #region Cerrar Sesión
         [HttpGet]
         public IActionResult Logout()
         {

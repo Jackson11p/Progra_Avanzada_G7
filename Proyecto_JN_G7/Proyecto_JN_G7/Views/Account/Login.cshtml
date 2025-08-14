@@ -13,15 +13,17 @@
 }
 
 <form asp-action="Login" method="post" novalidate>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
     <div class="mb-3">
         <label for="CorreoElectronico" class="form-label">Correo electrónico</label>
-        <input asp-for="CorreoElectronico" class="form-control"/>
+        <input asp-for="CorreoElectronico" class="form-control" />
         <span asp-validation-for="CorreoElectronico" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
         <label for="ContrasenaHash" class="form-label">Contraseña</label>
-        <input asp-for="ContrasenaHash" class="form-control" type="password"/>
+        <input asp-for="ContrasenaHash" class="form-control" type="password" />
         <span asp-validation-for="ContrasenaHash" class="text-danger"></span>
     </div>
 

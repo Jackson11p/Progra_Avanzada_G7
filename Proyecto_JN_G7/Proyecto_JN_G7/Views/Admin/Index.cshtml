@@ -1,0 +1,62 @@
+﻿@{
+    ViewData["Title"] = "Panel de Administración";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid py-3">
+    <div class="row">
+        <!-- Sidebar -->
+        <aside class="col-12 col-md-3 col-lg-2 mb-3 mb-md-0">
+            <div class="card h-100">
+                <div class="card-header fw-semibold">
+                    <i class="bi bi-gear-wide-connected me-1"></i> Administración
+                </div>
+                <div class="list-group list-group-flush" id="adminSidebar">
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center" data-partial="Doctores">
+                        <i class="bi bi-person-badge me-2"></i> Doctores
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center" data-partial="Pacientes">
+                        <i class="bi bi-people me-2"></i> Pacientes
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center" data-partial="Citas">
+                        <i class="bi bi-calendar2-check me-2"></i> Citas
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center" data-partial="HistorialMedico">
+                        <i class="bi bi-journal-medical me-2"></i> Historial Médico
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center" data-partial="Facturas">
+                        <i class="bi bi-receipt me-2"></i> Facturas
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex align-items-center" data-partial="Usuarios">
+                        <i class="bi bi-shield-lock me-2"></i> Usuarios
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Contenido dinámico -->
+        <section class="col-12 col-md-9 col-lg-10">
+            <div id="adminContent" class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border me-2" role="status" aria-hidden="true"></div>
+                        <strong>Cargando módulo…</strong>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+    <script>
+        // Cargar por defecto el módulo "Citas" al entrar
+        window.addEventListener('DOMContentLoaded', () => {
+          const link = document.querySelector('#adminSidebar [data-partial="Citas"]');
+          if (link) link.click();
+        });
+    </script>
+}
+
+

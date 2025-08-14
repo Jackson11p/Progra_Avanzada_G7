@@ -1,12 +1,14 @@
-﻿using System;
-using System.Reflection;
-using System.Text;
-using Dapper;
+﻿using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Proyecto_JN_G7Api.Models;
 using Proyecto_JN_G7Api.Services;
+using System;
+using System.Data;
+using System.Reflection;
+using System.Text;
 
 namespace Proyecto_JN_G7Api.Controllers
 {
@@ -48,6 +50,39 @@ namespace Proyecto_JN_G7Api.Controllers
 
                 return Ok("Registro exitoso");
             }
+        }
+
+        [HttpPost("RegistroPublico")]
+        [AllowAnonymous]
+        public IActionResult RegistroPublico([FromBody] CitaPublicaDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(_utilitarios.RespuestaIncorrecta("Datos incompletos o inválidos."));
+
+            try
+            {
+                using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+                conn.Execute("RegistrarCitaPublica", new
+                {
+                    dto.Nombre,
+                    dto.Email,
+                    dto.Telefono,
+                    dto.FechaHoraPreferida,
+                    dto.Especialidad,
+                    DoctorNombre = dto.DoctorNombre,
+                    Mensaje = dto.Mensaje
+                }, commandType: CommandType.StoredProcedure);
+            }
+            catch (Exception ex)
+            {
+                System.IO.File.AppendAllText("LogsCitasPublicas_Fallback.txt",
+                    $"[{DateTimeOffset.UtcNow:O}] Error al registrar solicitud: {ex.Message}{Environment.NewLine}");
+                
+            }
+
+            return Ok(_utilitarios.RespuestaCorrecta(
+                "¡Tu solicitud de cita fue enviada! Te contactaremos pronto para confirmar la disponibilidad."
+            ));
         }
     }
 }

@@ -399,3 +399,38 @@ BEGIN
 	INSERT INTO Pacientes (NombreCompleto, FechaNacimiento, Genero, Direccion, Telefono, CorreoElectronico)
     VALUES (@NombreCompleto, @FechaNacimiento, @Genero, @Direccion, @Telefono, @CorreoElectronico);    
 END
+
+
+-- Tabla
+CREATE TABLE CitasPublicas (
+    Id                 BIGINT IDENTITY(1,1) PRIMARY KEY,
+    Nombre             NVARCHAR(150) NOT NULL,
+    Email              NVARCHAR(150) NOT NULL,
+    Telefono           NVARCHAR(50)  NOT NULL,
+    FechaHoraPreferida DATETIME2     NOT NULL,
+    Especialidad       NVARCHAR(100) NOT NULL,
+    DoctorNombre       NVARCHAR(150) NULL,
+    Mensaje            NVARCHAR(MAX) NULL,
+    FechaSolicitud     DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET()
+);
+
+-- Procedimiento
+CREATE OR ALTER PROCEDURE RegistrarCitaPublica
+    @Nombre             NVARCHAR(150),
+    @Email              NVARCHAR(150),
+    @Telefono           NVARCHAR(50),
+    @FechaHoraPreferida DATETIME2,
+    @Especialidad       NVARCHAR(100),
+    @DoctorNombre       NVARCHAR(150) = NULL,
+    @Mensaje            NVARCHAR(MAX) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO CitasPublicas
+      (Nombre, Email, Telefono, FechaHoraPreferida, Especialidad, DoctorNombre, Mensaje)
+    VALUES
+      (@Nombre, @Email, @Telefono, @FechaHoraPreferida, @Especialidad, @DoctorNombre, @Mensaje);
+END
+GO
+
