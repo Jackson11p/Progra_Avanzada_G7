@@ -11,7 +11,7 @@ namespace Proyecto_JN_G7Api.Models
         [Required] public DateTime FechaHoraPreferida { get; set; }
         [Required] public string Especialidad { get; set; }
 
-        public string? DoctorNombre { get; set; } // opcional
+        public string? DoctorNombre { get; set; }
         public string? Mensaje { get; set; }
     }
 }

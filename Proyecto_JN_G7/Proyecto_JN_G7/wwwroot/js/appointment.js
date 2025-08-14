@@ -9,7 +9,7 @@
 
     const loading = form.querySelector('.loading');
     const errorMsg = form.querySelector('.error-message');
-    const successMsg = form.querySelector('.sent-message'); // ya no lo usamos, pero lo mantenemos oculto
+    const successMsg = form.querySelector('.sent-message'); 
 
     const byId = id => document.getElementById(id);
     const name = byId('name');
@@ -17,12 +17,12 @@
     const phone = byId('phone');
     const date = byId('date');
     const department = byId('department');
-    const doctor = byId('doctor'); // opcional
+    const doctor = byId('doctor'); 
     const message = form.querySelector('[name="message"]');
 
     const fields = [name, email, phone, date, department];
 
-    // Validación en vivo
+   
     function validateField(el) {
         if (!el) return;
         if (el.checkValidity()) {
@@ -36,7 +36,7 @@
     fields.forEach(f => f.addEventListener('input', () => validateField(f)));
     if (doctor) doctor.addEventListener('input', () => validateField(doctor));
 
-    // Mínimo: ahora + 15 minutos
+
     (function setMinDate() {
         const now = new Date();
         now.setMinutes(now.getMinutes() + 15);
@@ -91,7 +91,7 @@
             // --- ÉXITO: llenar y mostrar modal ---
             const modalEl = document.getElementById('appointmentSuccessModal');
             if (modalEl) {
-                // Datos para el modal (usar valores actuales ANTES de resetear)
+                
                 const displayDate = localVal
                     ? new Date(localVal).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
                     : '';
@@ -104,13 +104,13 @@
                 const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                 modal.show();
 
-                // Al cerrar el modal, limpiar el formulario
+                
                 modalEl.addEventListener('hidden.bs.modal', () => {
                     form.reset();
                     [...form.querySelectorAll('.is-valid')].forEach(el => el.classList.remove('is-valid'));
                 }, { once: true });
             } else {
-                // Fallback: si no está el modal en el DOM, muestra el mensaje inline
+                
                 if (successMsg) {
                     const okMsg = (body && body.mensaje) || '¡Solicitud enviada! Te contactaremos pronto.';
                     successMsg.textContent = okMsg;

@@ -23,7 +23,6 @@ namespace Proyecto_JN_G7.Controllers
         [HttpPost]
         public async Task<IActionResult> Registro(Autenticacion model)
         {
-            // Mantén tu comportamiento actual: la API espera la contraseña "encriptada"
             model.ContrasenaHash = _utilitarios.Encrypt(model.ContrasenaHash!);
 
             var client = _http.CreateClient("Api");
@@ -45,41 +44,31 @@ namespace Proyecto_JN_G7.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(Autenticacion model)
         {
-            // La API actual usa tu "Encrypt", así que lo mantenemos
+            
             model.ContrasenaHash = _utilitarios.Encrypt(model.ContrasenaHash!);
 
             var client = _http.CreateClient("Api");
             var resp = await client.PostAsJsonAsync("api/Account/Login", model);
 
             var contentType = resp.Content.Headers.ContentType?.MediaType ?? "";
-            var raw = await resp.Content.ReadAsStringAsync();
 
             if (!resp.IsSuccessStatusCode)
             {
                 if (contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase))
                 {
-                    var respuesta = System.Text.Json.JsonSerializer.Deserialize<RespuestaEstandar>(raw);
+                    var respuesta = await resp.Content.ReadFromJsonAsync<RespuestaEstandar>();
                     ViewBag.Mensaje = respuesta?.Mensaje ?? "Credenciales inválidas";
                 }
                 else
                 {
+                    var raw = await resp.Content.ReadAsStringAsync();
                     ViewBag.Mensaje = string.IsNullOrWhiteSpace(raw) ? "Credenciales inválidas" : raw;
                 }
                 return View();
             }
 
-            // Éxito: la API devuelve Autenticacion (como lo tenías)
-            Autenticacion? usuario = null;
-            try
-            {
-                usuario = System.Text.Json.JsonSerializer.Deserialize<Autenticacion>(raw,
-                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            }
-            catch
-            {
-                ViewBag.Mensaje = "Respuesta inesperada del servidor.";
-                return View();
-            }
+            var usuario = await resp.Content.ReadFromJsonAsync<Autenticacion>(
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             if (usuario == null)
             {
@@ -87,18 +76,15 @@ namespace Proyecto_JN_G7.Controllers
                 return View();
             }
 
-            // Guardar en Session (igual que antes)
             HttpContext.Session.SetString("UsuarioID", usuario.UsuarioID.ToString());
             HttpContext.Session.SetString("NombreCompleto", usuario.NombreCompleto ?? "");
             HttpContext.Session.SetInt32("RolID", usuario.RolID);
 
-            // Mapear RolID -> string para el panel admin
             var rolNombre = usuario.RolID == 3 ? "Administrador"
                          : usuario.RolID == 2 ? "Doctor"
                          : "Usuario";
             HttpContext.Session.SetString("ROL", rolNombre);
 
-            // Si es admin, redirigir al panel
             if (rolNombre.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
                 return RedirectToAction("Index", "Admin");
 

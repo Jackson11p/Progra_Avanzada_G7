@@ -7,7 +7,6 @@ namespace Proyecto_JN_G7.Controllers
     {
         public IActionResult Index() => View();
 
-        // Endpoints para cargar parciales
         public IActionResult Doctores() => PartialView("Partials/_Doctores");
         public IActionResult Pacientes() => PartialView("Partials/_Pacientes");
         public IActionResult Citas() => PartialView("Partials/_Citas");
