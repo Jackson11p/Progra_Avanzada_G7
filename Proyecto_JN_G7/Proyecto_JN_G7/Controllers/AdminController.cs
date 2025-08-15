@@ -13,8 +13,16 @@ namespace Proyecto_JN_G7.Controllers
         public async Task<IActionResult> Citas()
         {
             var client = _http.CreateClient("Api");
-            var data = await client.GetFromJsonAsync<List<CitaUnificada>>("api/Cita/Unificada");
-            return PartialView("Partials/_Citas", data ?? new());
+            var tCitas = client.GetFromJsonAsync<List<CitaUnificada>>("api/Cita/Unificada");
+            var tDoctores = client.GetFromJsonAsync<List<DoctorListItem>>("api/Doctor/ListaSimple");
+            var tPacientes = client.GetFromJsonAsync<List<PacienteListItem>>("api/Paciente/ListaSimple");
+
+            await Task.WhenAll(tCitas!, tDoctores!, tPacientes!);
+
+            ViewBag.Doctores = tDoctores!.Result ?? new();
+            ViewBag.Pacientes = tPacientes!.Result ?? new();
+
+            return PartialView("Partials/_Citas", tCitas!.Result ?? new());
         }
 
         public IActionResult Doctores() => PartialView("Partials/_Doctores");

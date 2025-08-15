@@ -1,12 +1,13 @@
-﻿using System;
-using System.Reflection;
-using System.Text;
-using Dapper;
+﻿using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Proyecto_JN_G7Api.Models;
 using Proyecto_JN_G7Api.Services;
+using System;
+using System.Data;
+using System.Reflection;
+using System.Text;
 
 namespace Proyecto_JN_G7Api.Controllers
 {
@@ -24,30 +25,68 @@ namespace Proyecto_JN_G7Api.Controllers
             _utilitarios = utilitarios;
         }
 
-        //Registra un paciente
-        [HttpPost]
-        [Route("Registro")]
-        public IActionResult Registro(Pacientes model)
+        [HttpGet("ListaSimple")]
+        public IActionResult ListaSimple()
         {
-            var connectionString = _configuration.GetConnectionString("Connection");
-
-            using (var context = new SqlConnection(connectionString))
-            {
-                var result = context.Execute("RegistrarPaciente",
-                    new
-                    {
-                        model.NombreCompleto,
-                        model.FechaNacimiento,
-                        model.Genero,
-                        model.Direccion,
-                        model.Telefono,
-                        model.CorreoElectronico
-                    },
-                    commandType: System.Data.CommandType.StoredProcedure
-                );
-
-                return Ok("Registro exitoso");
-            }
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var data = conn.Query<PacienteListItem>("Paciente_ListaSimple",
+                        commandType: CommandType.StoredProcedure).ToList();
+            return Ok(data);
         }
+
+        [HttpGet("Buscar")]
+        public IActionResult Buscar([FromQuery] string? email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest("Debe enviar 'email'.");
+
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var item = conn.QueryFirstOrDefault<PacienteListItem>(
+                "Paciente_Buscar",
+                new { Email = email },
+                commandType: CommandType.StoredProcedure
+            );
+
+            return item is null ? NotFound() : Ok(item);
+        }
+
+        public class PacienteCrearReq
+        {
+            public string Cedula { get; set; } = "";
+            public string NombreCompleto { get; set; } = "";
+            public string CorreoElectronico { get; set; } = "";
+            public string? ContrasenaHash { get; set; }
+            public string? Telefono { get; set; }
+            public DateTime? FechaNacimiento { get; set; }
+            public string? Genero { get; set; }
+            public string? Direccion { get; set; }
+        }
+
+        [HttpPost]
+        public IActionResult Crear([FromBody] PacienteCrearReq body)
+        {
+            if (string.IsNullOrWhiteSpace(body.Cedula) ||
+                string.IsNullOrWhiteSpace(body.NombreCompleto) ||
+                string.IsNullOrWhiteSpace(body.CorreoElectronico))
+            {
+                return BadRequest(_utilitarios.RespuestaIncorrecta("Cédula, nombre y correo son obligatorios."));
+            }
+
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var id = conn.QuerySingle<int>("Paciente_Crear", new
+            {
+                body.Cedula,
+                body.NombreCompleto,
+                body.CorreoElectronico,
+                body.ContrasenaHash,
+                body.Telefono,
+                body.FechaNacimiento,
+                body.Genero,
+                body.Direccion
+            }, commandType: CommandType.StoredProcedure);
+
+            return Ok(new { pacienteID = id });
+        }
+
     }
 }

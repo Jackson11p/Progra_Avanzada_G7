@@ -57,14 +57,18 @@
                                 @x.FechaHora.ToString("dd/MM/yyyy HH:mm")
                                 <div class="text-muted small">Reg.: @x.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</div>
                             </td>
-                            <td>@(isCita ? $"PacienteID: {x.PacienteID}" : x.PacienteNombre)</td>
-                            <td>@(isCita ? $"DoctorID: {x.DoctorID}" : x.DoctorNombre)</td>
+                            <td>@(x.PacienteNombre ?? $"PacienteID: {x.PacienteID}")</td>
+                            <td>@(x.DoctorNombre ?? $"DoctorID: {x.DoctorID}")</td>
+
                             <td>@x.Estado</td>
                             <td class="text-truncate" style="max-width:260px;">@x.Motivo</td>
                             <td class="small">
-                                @if (!isCita)
+                                @if (!string.IsNullOrWhiteSpace(x.Email))
                                 {
                                     <div><i class="bi bi-envelope me-1"></i>@x.Email</div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(x.Telefono))
+                                {
                                     <div><i class="bi bi-telephone me-1"></i>@x.Telefono</div>
                                 }
                             </td>
@@ -95,7 +99,9 @@
                                         <button class="btn btn-outline-success"
                                                 data-action="attend-solicitud"
                                                 data-solicitud-id="@x.SolicitudID"
-                                                data-motivo="@x.Motivo">
+                                                data-motivo="@x.Motivo"
+                                                data-email="@x.Email"
+                                                data-nombre="@x.PacienteNombre">
                                             <i class="bi bi-check2-circle"></i> Atender
                                         </button>
                                         <button class="btn btn-outline-secondary"
@@ -126,12 +132,35 @@
                 <input type="hidden" id="citaId">
 
                 <div class="mb-2">
-                    <label class="form-label">PacienteID</label>
-                    <input type="number" class="form-control" id="pacienteId" required>
+                    <label class="form-label">Paciente</label>
+                    @await Html.PartialAsync(
+                    "Partials/_SelectorPaciente",
+                                        (IEnumerable<Proyecto_JN_G7.Models.PacienteListItem>)(ViewBag.Pacientes ?? new List<Proyecto_JN_G7.Models.PacienteListItem>()),
+                                        new ViewDataDictionary(ViewData) {
+                                        { "SelectId", "pacienteEdit" },
+                                        { "SelectName", "pacienteEdit" }
+                                        }
+                                        )
+                </div>
+                <div class="d-flex justify-content-end mb-2">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            data-action="open-new-paciente"
+                            data-target-select="#pacienteEdit">
+                        <i class="bi bi-person-plus"></i> Crear paciente
+                    </button>
                 </div>
                 <div class="mb-2">
-                    <label class="form-label">DoctorID</label>
-                    <input type="number" class="form-control" id="doctorId" required>
+                    <label class="form-label">Doctor</label>
+                    @await Html.PartialAsync(
+                    "Partials/_SelectDoctor",
+                                        (IEnumerable<Proyecto_JN_G7.Models.DoctorListItem>)(ViewBag.Doctores ?? new List<Proyecto_JN_G7.Models.DoctorListItem>()),
+                                        new ViewDataDictionary(ViewData) {
+                                        { "SelectId", "doctorEdit" },           
+                                        { "SelectName", "doctorEdit" },
+                                        { "ValueField", "Id" }                  
+                                        }
+                                        )
                 </div>
                 <div class="mb-2">
                     <label class="form-label">Fecha y hora</label>
@@ -170,12 +199,40 @@
                 <input type="hidden" id="solicitudId">
 
                 <div class="mb-2">
-                    <label class="form-label">PacienteID</label>
-                    <input type="number" class="form-control" id="a_pacienteId" required>
+                    <label class="form-label">Paciente</label>
+                    @await Html.PartialAsync(
+                                        "Partials/_SelectorPaciente",
+                                        (IEnumerable<Proyecto_JN_G7.Models.PacienteListItem>)(ViewBag.Pacientes ?? new List<Proyecto_JN_G7.Models.PacienteListItem>()),
+                                        new ViewDataDictionary(ViewData) {
+                                        { "SelectId", "a_pacienteSelect" },
+                                        { "SelectName", "a_pacienteSelect" }
+                                        }
+                                        )
+                </div>
+                <div class="d-flex justify-content-end mb-2">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            data-action="open-new-paciente"
+                            data-target-select="#a_pacienteSelect">
+                        <i class="bi bi-person-plus"></i> Crear paciente
+                    </button>
+                </div>
+
+                <!-- si no existe el paciente -->
+                <div id="a_pacienteHint" class="text-muted small d-none">
+                    No encontramos al paciente por email. Puedes crearlo con el botón “Crear paciente”.
                 </div>
                 <div class="mb-2">
-                    <label class="form-label">DoctorID</label>
-                    <input type="number" class="form-control" id="a_doctorId" required>
+                    <label class="form-label">Doctor</label>
+                    @await Html.PartialAsync(
+                                        "Partials/_SelectDoctor",
+                                        (IEnumerable<Proyecto_JN_G7.Models.DoctorListItem>)(ViewBag.Doctores ?? new List<Proyecto_JN_G7.Models.DoctorListItem>()),
+                                        new ViewDataDictionary(ViewData) {
+                                        { "SelectId", "a_doctorSelect" },       
+                                        { "SelectName", "a_doctorSelect" },
+                                        { "ValueField", "Id" }                  
+                                        }
+                                        )
                 </div>
                 <div class="mb-2">
                     <label class="form-label">Fecha y hora</label>
@@ -201,4 +258,39 @@
         </form>
     </div>
 </div>
+
+<!-- Modal: Crear Paciente -->
+<div class="modal fade" id="modalPaciente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" id="formPaciente">
+            <div class="modal-header">
+                <h5 class="modal-title">Crear paciente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2">
+                    <label class="form-label">Cédula</label>
+                    <input type="text" class="form-control" id="p_cedula" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Nombre completo</label>
+                    <input type="text" class="form-control" id="p_nombre" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Correo electrónico</label>
+                    <input type="email" class="form-control" id="p_email" required>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label">Contraseña (opcional)</label>
+                    <input type="password" class="form-control" id="p_pass" placeholder="Si se omite, se asigna una temporal">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+                <button class="btn btn-success" type="submit">Crear paciente</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 

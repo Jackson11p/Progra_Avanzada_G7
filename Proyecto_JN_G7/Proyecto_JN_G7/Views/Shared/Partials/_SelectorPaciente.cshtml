@@ -1,0 +1,14 @@
+﻿@model IEnumerable<Proyecto_JN_G7.Models.PacienteListItem>
+@{
+    var selectId = ViewData["SelectId"] as string ?? "paciente";
+    var selectName = ViewData["SelectName"] as string ?? selectId;
+}
+<select id="@selectId" name="@selectName" class="form-select" aria-label="Seleccione un paciente">
+    <option value="">Seleccione un paciente…</option>
+    @foreach (var p in Model)
+    {
+        <option value="@p.PacienteID">
+            @p.NombreCompleto (@p.Cedula) — @p.CorreoElectronico
+        </option>
+    }
+</select>

@@ -434,44 +434,50 @@ BEGIN
 END
 GO
 
+-- Cita_Listar_Unificada 
 CREATE OR ALTER PROCEDURE Cita_Listar_Unificada
 AS
 BEGIN
   SET NOCOUNT ON;
 
+  -- Citas (contacto desde Pacientes)
   SELECT
-      CAST(N'Cita' AS NVARCHAR(10))          AS Tipo,
-      c.CitaID                                AS CitaID,
-      CAST(NULL AS BIGINT)                    AS SolicitudID,      
-      c.PacienteID                            AS PacienteID,
-      CAST(NULL AS NVARCHAR(150))             AS PacienteNombre,   
-      c.DoctorID                              AS DoctorID,
-      CAST(NULL AS NVARCHAR(150))             AS DoctorNombre,     
-      CAST(c.FechaHora AS DATETIME2)          AS FechaHora,
-      c.Estado                                AS Estado,
-      c.MotivoConsulta                        AS Motivo,
-      CAST(NULL AS NVARCHAR(150))             AS Email,
-      CAST(NULL AS NVARCHAR(50))              AS Telefono,
-      CAST(c.FechaCreacion AS DATETIME2)      AS FechaRegistro
+      'Cita'                         AS Tipo,
+      c.CitaID,
+      CAST(NULL AS bigint)          AS SolicitudID,
+      c.FechaHora,
+      c.FechaCreacion               AS FechaRegistro,
+      p.PacienteID,
+      p.NombreCompleto              AS PacienteNombre,
+      d.DoctorID,
+      u.NombreCompleto              AS DoctorNombre,
+      c.Estado,
+      c.MotivoConsulta              AS Motivo,
+      p.CorreoElectronico           AS Email,
+      p.Telefono                    AS Telefono
   FROM Citas c
+  JOIN Pacientes p        ON p.PacienteID = c.PacienteID
+  LEFT JOIN Doctores d    ON d.DoctorID   = c.DoctorID
+  LEFT JOIN Usuarios u    ON u.UsuarioID  = d.UsuarioID
 
   UNION ALL
 
+  -- Solicitudes públicas (contacto viene de la propia solicitud)
   SELECT
-      CAST(N'Solicitud' AS NVARCHAR(10))      AS Tipo,
-      CAST(NULL AS INT)                       AS CitaID,           
-      cp.Id                                   AS SolicitudID,
-      CAST(NULL AS INT)                       AS PacienteID,
-      cp.Nombre                               AS PacienteNombre,
-      CAST(NULL AS INT)                       AS DoctorID,
-      cp.DoctorNombre                         AS DoctorNombre,
-      CAST(cp.FechaHoraPreferida AS DATETIME2)AS FechaHora,
-      CAST(N'Pendiente' AS NVARCHAR(30))      AS Estado,           
-      cp.Mensaje                               AS Motivo,
-      cp.Email                                 AS Email,
-      cp.Telefono                              AS Telefono,
-      CAST(cp.FechaSolicitud AS DATETIME2)     AS FechaRegistro
-  FROM CitasPublicas cp
+      'Solicitud'                    AS Tipo,
+      CAST(NULL AS int)              AS CitaID,
+      s.Id                           AS SolicitudID,
+      s.FechaHoraPreferida           AS FechaHora,
+      s.FechaSolicitud               AS FechaRegistro,
+      CAST(NULL AS int)              AS PacienteID,
+      s.Nombre                       AS PacienteNombre,
+      CAST(NULL AS int)              AS DoctorID,
+      s.DoctorNombre                 AS DoctorNombre,
+      'Pendiente'                    AS Estado,
+      s.Mensaje                      AS Motivo,
+      s.Email                        AS Email,
+      s.Telefono                     AS Telefono
+  FROM CitasPublicas s
 
   ORDER BY FechaHora DESC;
 END
@@ -479,16 +485,30 @@ GO
 
 -- CREAR
 CREATE OR ALTER PROCEDURE Cita_Crear
-  @PacienteID INT,
-  @DoctorID INT,
-  @FechaHora DATETIME2,
-  @Estado NVARCHAR(20),
-  @MotivoConsulta NVARCHAR(MAX)
+  @PacienteID      INT,
+  @DoctorID        INT,
+  @FechaHora       DATETIME2(0),
+  @Estado          NVARCHAR(50),
+  @MotivoConsulta  NVARCHAR(MAX) = NULL
 AS
 BEGIN
   SET NOCOUNT ON;
-  INSERT INTO Citas(PacienteID,DoctorID,FechaHora,Estado,MotivoConsulta,FechaCreacion)
-  VALUES(@PacienteID,@DoctorID,@FechaHora,@Estado,@MotivoConsulta,SYSUTCDATETIME());
+
+  IF NOT EXISTS (SELECT 1 FROM Pacientes WHERE PacienteID = @PacienteID)
+  BEGIN
+    RAISERROR('Paciente no existe', 16, 1);
+    RETURN;
+  END
+
+  IF NOT EXISTS (SELECT 1 FROM Doctores WHERE DoctorID = @DoctorID)
+  BEGIN
+    RAISERROR('Doctor no existe', 16, 1);
+    RETURN;
+  END
+
+  INSERT INTO Citas(PacienteID, DoctorID, FechaHora, Estado, MotivoConsulta, FechaCreacion)
+  VALUES (@PacienteID, @DoctorID, @FechaHora, @Estado, @MotivoConsulta, SYSDATETIME());
+
   SELECT CAST(SCOPE_IDENTITY() AS INT) AS CitaID;
 END
 GO
@@ -628,4 +648,119 @@ VALUES ('DOC-1006', 'Diego Campos', 'diego.campos@healthylife.test', 'temp', @Ro
 DECLARE @U6 INT = SCOPE_IDENTITY();
 INSERT INTO Doctores (UsuarioID, Especialidad, CedulaProfesional)
 VALUES (@U6, 'Dermatología', 'DER-006');
+
+-- Pacientes de prueba (rol Usuario)
+INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+VALUES ('1-1012-0345', 'María Fernández', 'maria.fernandez@healthylife.test', 'temp', (SELECT RolID FROM Roles WHERE NombreRol='Usuario'), 1);
+
+INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+VALUES ('2-3456-7890', 'José Ramírez', 'jose.ramirez@healthylife.test', 'temp', (SELECT RolID FROM Roles WHERE NombreRol='Usuario'), 1);
+
+INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+VALUES ('4-1122-3344', 'Daniela Quesada', 'daniela.quesada@healthylife.test', 'temp', (SELECT RolID FROM Roles WHERE NombreRol='Usuario'), 1);
+
+INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+VALUES ('5-5566-7788', 'Luis Álvarez', 'luis.alvarez@healthylife.test', 'temp', (SELECT RolID FROM Roles WHERE NombreRol='Usuario'), 1);
+
+INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+VALUES ('7-0199-3456', 'Carmen Rojas', 'carmen.rojas@healthylife.test', 'temp', (SELECT RolID FROM Roles WHERE NombreRol='Usuario'), 1);
+
+-- Lista simple de pacientes (Usuarios con rol 'Usuario')
+DROP PROCEDURE IF EXISTS Paciente_ListaSimple;
+GO
+
+CREATE OR ALTER PROCEDURE Paciente_ListaSimple
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT 
+    p.PacienteID,
+    u.Cedula,
+    u.NombreCompleto,
+    u.CorreoElectronico
+  FROM Pacientes p
+  JOIN Usuarios  u ON u.UsuarioID = p.UsuarioID
+  WHERE u.Activo = 1
+  ORDER BY u.NombreCompleto;
+END
+GO
+
+
+
+-- Buscar paciente por email y/o cédula
+DROP PROCEDURE IF EXISTS Paciente_Buscar;
+GO
+CREATE PROCEDURE Paciente_Buscar
+  @Email  VARCHAR(100) = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF (@Email IS NULL)
+  BEGIN
+    RAISERROR('Debe enviar @Email', 16, 1);
+    RETURN;
+  END
+
+  SELECT TOP 1
+         PacienteID,
+         NombreCompleto,
+         CorreoElectronico,
+         Telefono,
+         '' AS Cedula
+  FROM Pacientes
+  WHERE CorreoElectronico = @Email
+  ORDER BY PacienteID;
+END
+GO
+
+
+CREATE OR ALTER PROCEDURE Paciente_Crear
+  @Cedula           VARCHAR(50),
+  @NombreCompleto   VARCHAR(100),
+  @CorreoElectronico VARCHAR(100),
+  @ContrasenaHash   VARCHAR(255) = NULL,   -- si no mandan, pones algo temporal
+  @Telefono         VARCHAR(20)  = NULL,
+  @FechaNacimiento  DATE         = NULL,
+  @Genero           VARCHAR(10)  = NULL,
+  @Direccion        VARCHAR(200) = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SET XACT_ABORT ON;
+
+  IF @FechaNacimiento IS NULL SET @FechaNacimiento = '1990-01-01';
+  IF @ContrasenaHash IS NULL SET @ContrasenaHash = 'temporal';
+
+  DECLARE @RolUsuario INT = (SELECT RolID FROM Roles WHERE NombreRol='Usuario');
+
+  BEGIN TRAN;
+
+    DECLARE @UsuarioID INT;
+
+    INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+    VALUES (@Cedula, @NombreCompleto, @CorreoElectronico, @ContrasenaHash, @RolUsuario, 1);
+
+    SET @UsuarioID = SCOPE_IDENTITY();
+
+    INSERT INTO Pacientes (UsuarioID, FechaNacimiento, Genero, Direccion, Telefono, CorreoElectronico, NombreCompleto)
+    VALUES (@UsuarioID, @FechaNacimiento, @Genero, @Direccion, @Telefono, @CorreoElectronico, @NombreCompleto);
+
+    SELECT CAST(SCOPE_IDENTITY() AS INT) AS PacienteID;
+
+  COMMIT;
+END
+GO
+
+
+ALTER TABLE Pacientes ADD UsuarioID INT NULL;
+
+ALTER TABLE Pacientes ALTER COLUMN UsuarioID INT NOT NULL;
+ALTER TABLE Pacientes
+  ADD CONSTRAINT FK_Pacientes_Usuarios
+  FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID);
+
+
+
 

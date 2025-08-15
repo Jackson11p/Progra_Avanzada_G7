@@ -95,19 +95,40 @@ namespace Proyecto_JN_G7Api.Controllers
             return Ok(data);
         }
 
-        [HttpPost] 
-        public IActionResult Crear([FromBody] Models.Cita model)
+
+        public record CitaCreateReq(
+            int PacienteID,
+            int DoctorID,
+            DateTime FechaHora,
+            string Estado,
+            string? MotivoConsulta
+        );
+
+        [HttpPost]
+        [HttpPost]
+        public IActionResult Crear([FromBody] CitaCreateReq dto)
         {
+            if (dto.PacienteID <= 0 || dto.DoctorID <= 0 || dto.FechaHora == default)
+                return BadRequest(_utilitarios.RespuestaIncorrecta("Paciente, doctor y fecha son obligatorios."));
+
             using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
-            var newId = conn.QuerySingle<int>("Cita_Crear", new
+            try
             {
-                model.PacienteID,
-                model.DoctorID,
-                model.FechaHora,
-                model.Estado,
-                model.MotivoConsulta
-            }, commandType: CommandType.StoredProcedure);
-            return Ok(new { CitaID = newId });
+                var id = conn.QuerySingle<int>("Cita_Crear", new
+                {
+                    dto.PacienteID,
+                    dto.DoctorID,
+                    dto.FechaHora,
+                    dto.Estado,
+                    dto.MotivoConsulta
+                }, commandType: CommandType.StoredProcedure);
+
+                return Ok(new { CitaID = id });
+            }
+            catch (SqlException ex)
+            {
+                return BadRequest(_utilitarios.RespuestaIncorrecta(ex.Message));
+            }
         }
 
         [HttpPut("{id:int}")]
