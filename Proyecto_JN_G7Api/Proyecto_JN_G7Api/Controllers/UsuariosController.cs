@@ -64,5 +64,14 @@ namespace Proyecto_JN_G7Api.Controllers
                     return BadRequest(_utilitarios.RespuestaIncorrecta("Su información no fue actualizada"));
             }
         }
+
+        [HttpGet]
+        [Route("ConsultarUsuariosDropdown")]
+        public IActionResult ConsultarUsuariosDropdown()
+        {
+            using var context = new SqlConnection(_configuration.GetSection("ConnectionStrings:Connection").Value);            
+            var resultado = context.Query<UsuarioDropdown>("ConsultarUsuariosDropdown", commandType: CommandType.StoredProcedure);
+            return Ok(_utilitarios.RespuestaCorrecta(resultado));
+        }        
     }
 }

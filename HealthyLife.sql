@@ -537,6 +537,33 @@ BEGIN
 END
 GO
 
+--comsultar doctores:
+CREATE PROCEDURE ConsultarDoctores
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        d.DoctorID,
+        d.UsuarioID,
+        u.NombreCompleto,
+        d.Especialidad,
+        d.CedulaProfesional
+    FROM Doctores d
+    INNER JOIN Usuarios u ON d.UsuarioID = u.UsuarioID;
+END;
+GO
+
+--carga los nombres de los usuarios para popular dropdowns:
+CREATE PROCEDURE dbo.ConsultarUsuariosDropdown
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT UsuarioID, NombreCompleto
+    FROM Usuarios
+    ORDER BY NombreCompleto;
+END;
 
 -- ATENDER: crea cita y elimina la solicitud
 CREATE OR ALTER PROCEDURE CitaPublica_Atender
@@ -572,6 +599,30 @@ BEGIN
   END CATCH
 END
 GO
+
+--Actualiar doctor
+CREATE OR ALTER PROCEDURE [dbo].[ActualizarDoctor]
+    @DoctorID INT,
+    @Especialidad VARCHAR(100),
+    @CedulaProfesional VARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Doctores
+    SET         
+        Especialidad = @Especialidad,
+        CedulaProfesional = @CedulaProfesional
+    WHERE DoctorID = @DoctorID;
+END
+
+UPDATE Doctores
+SET Especialidad = 'Prueba',
+    CedulaProfesional = '123456777'
+WHERE DoctorID = 1;
+
+
+
 
 -- DESCARTAR solicitud
 CREATE OR ALTER PROCEDURE CitaPublica_Eliminar

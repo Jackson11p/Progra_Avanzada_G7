@@ -44,6 +44,26 @@ namespace Proyecto_JN_G7.Controllers
                 }
             }
         }
+
+        [HttpPost]
+        public IActionResult Actualizar(Doctores model)
+        {
+            using var http = _http.CreateClient();
+            http.BaseAddress = new Uri(_configuration.GetSection("Start:ApiUrl").Value!);
+
+            var resultado = http.PutAsJsonAsync("api/Doctor/Actualizar", model).Result;
+
+            if (resultado.IsSuccessStatusCode)
+                return RedirectToAction("Index", "Home");
+            else
+            {
+                var respuesta = resultado.Content.ReadFromJsonAsync<RespuestaEstandar>().Result;
+                ViewBag.Mensaje = respuesta?.Mensaje;
+                return RedirectToAction("Index", "Home");
+            }
+        }
+
+
         #endregion
 
         public IActionResult Index()

@@ -17,7 +17,14 @@ namespace Proyecto_JN_G7.Controllers
             return PartialView("Partials/_Citas", data ?? new());
         }
 
-        public IActionResult Doctores() => PartialView("Partials/_Doctores");
+        //consultar los docs
+        public async Task<IActionResult> Doctores()
+        {
+            var client = _http.CreateClient("Api");
+            var data = await client.GetFromJsonAsync<List<DoctorListItem>>("api/Doctor/ConsultarDoctor");
+            return PartialView("Partials/_Doctores", data ?? new());
+        }
+        
         public IActionResult Pacientes() => PartialView("Partials/_Pacientes");
         public IActionResult HistorialMedico() => PartialView("Partials/_HistorialMedico");
         public IActionResult Facturas() => PartialView("Partials/_Facturas");
