@@ -1,12 +1,13 @@
-﻿using System;
-using System.Reflection;
-using System.Text;
-using Dapper;
+﻿using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Proyecto_JN_G7Api.Models;
 using Proyecto_JN_G7Api.Services;
+using System;
+using System.Data;
+using System.Reflection;
+using System.Text;
 
 namespace Proyecto_JN_G7Api.Controllers
 {
@@ -49,7 +50,7 @@ namespace Proyecto_JN_G7Api.Controllers
 
             using (var context = new SqlConnection(connectionString))
             {
-                var result = context.Execute("RegistrarDcotor",
+                var result = context.Execute("RegistrarDoctor",
                     new
                     {
                         model.UsuarioID,
@@ -61,6 +62,42 @@ namespace Proyecto_JN_G7Api.Controllers
 
                 return Ok("Registro exitoso");
             }
+        }
+
+        //Consulta los doctores
+        [HttpGet("ConsultarDoctor")]
+        public IActionResult ConsultarDoctor()
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var data = conn.Query<DoctorListItem>(
+                "ConsultarDoctores",
+                commandType: CommandType.StoredProcedure);
+            return Ok(data);
+        }
+
+        //Actualiza los datos de un doctor
+        [HttpPut]
+        [Route("Actualizar")]
+        public IActionResult Actualizar(Doctores model)
+        {
+            var connectionString = _configuration.GetConnectionString("Connection");
+            using var context = new SqlConnection(connectionString);
+
+            var result = context.Execute(
+                "ActualizarDoctor",
+                new
+                {
+                    model.DoctorID,
+                    model.Especialidad,
+                    model.CedulaProfesional
+                },
+                commandType: CommandType.StoredProcedure
+            );
+
+            if (result > 0)
+                return Ok(new { mensaje = "Actualización exitosa" });
+            else
+                return StatusCode(500, new { mensaje = "No se pudo actualizar el doctor" });
         }
     }
 }

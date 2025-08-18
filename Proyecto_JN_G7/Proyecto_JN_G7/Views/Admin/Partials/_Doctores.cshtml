@@ -1,0 +1,121 @@
+﻿@model IEnumerable<Proyecto_JN_G7.Models.DoctorListItem>
+
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <div class="fw-semibold">
+            <i class="bi bi-person-badge me-1"></i> Doctores
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalRegistrarDoctor">
+                <i class="bi bi-plus-circle"></i> Nuevo Doctor
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary"
+                    onclick="const a=document.querySelector('#adminSidebar [data-partial=&quot;Doctores&quot;]'); if(a) a.click();">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Especialidad</th>
+                    <th>Cédula Profesional</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">No hay doctores registrados.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var doctor in Model)
+                    {
+                        <tr>
+                            <td>@doctor.DoctorID</td>
+                            <td>@doctor.NombreCompleto</td>
+                            <td>@doctor.Especialidad</td>
+                            <td>@doctor.CedulaProfesional</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalEditarDoctor@doctor.DoctorID">
+                                        <i class="bi bi-pencil-square"></i> Editar
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Registrar Doctor -->
+<div class="modal fade" id="modalRegistrarDoctor" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form asp-action="Registro" asp-controller="Doctor" method="post" class="modal-content" novalidate>
+            <div class="modal-header">
+                <h5 class="modal-title">Registrar Doctor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2">
+                    <label class="form-label">ID de Usuario</label>
+                    <input type="number" name="UsuarioID" class="form-control" required />
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Especialidad</label>
+                    <input type="text" name="Especialidad" class="form-control" required />
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Cédula Profesional</label>
+                    <input type="text" name="CedulaProfesional" class="form-control" required />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modales Editar Doctor -->
+@foreach (var doctor in Model)
+{
+    <div class="modal fade" id="modalEditarDoctor@doctor.DoctorID" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form asp-action="Actualizar" asp-controller="Doctor" method="post" class="modal-content" novalidate>
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Doctor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="DoctorID" value="@doctor.DoctorID" />
+
+                    <div class="mb-2">
+                        <label class="form-label">Especialidad</label>
+                        <input type="text" name="Especialidad" class="form-control" value="@doctor.Especialidad" required />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Cédula Profesional</label>
+                        <input type="text" name="CedulaProfesional" class="form-control" value="@doctor.CedulaProfesional" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+}

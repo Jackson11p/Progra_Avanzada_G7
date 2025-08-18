@@ -1,32 +1,9 @@
 ﻿@model IEnumerable<Proyecto_JN_G7.Models.DoctorListItem>
-@{
-    var selectId = (string)(ViewData["SelectId"] ?? "doctor");
-    var selectName = (string)(ViewData["SelectName"] ?? selectId);
-    var selected = (string?)ViewData["SelectedValue"]; // opcional
-}
 
-<select id="@selectId" name="@selectName" class="form-select" required>
-    @* Placeholder *@
-    @if (string.IsNullOrEmpty(selected))
-    {
-        <option value="" disabled selected>Seleccione un médico</option>
-    }
-    else
-    {
-        <option value="" disabled>Seleccione un médico</option>
-    }
-
-    @* Opciones *@
+<select name="doctor" id="doctor" class="form-select" aria-label="Seleccione un médico">
+    <option value="">Sin preferencia de médico</option>
     @foreach (var d in Model)
     {
-        if (selected == d.DoctorID.ToString())
-        {
-            <option value="@d.DoctorID" selected>@d.Nombre (@d.Especialidad)</option>
-        }
-        else
-        {
-            <option value="@d.DoctorID">@d.Nombre (@d.Especialidad)</option>
-        }
+        <option value="@d.NombreCompleto">@d.NombreCompleto — @d.Especialidad</option>
     }
 </select>
-<div class="invalid-feedback">Seleccione un médico.</div>
