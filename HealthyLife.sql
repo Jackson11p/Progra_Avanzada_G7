@@ -813,5 +813,181 @@ ALTER TABLE Pacientes
   FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID);
 
 
+-- Listar roles
+CREATE OR ALTER PROCEDURE dbo.Roles_Listar
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT RolID, NombreRol
+    FROM Roles
+    ORDER BY RolID;
+END
+GO
+
+-- Listar Usuarios
+CREATE OR ALTER PROCEDURE dbo.Usuario_Listar
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        u.UsuarioID,
+        u.Cedula,
+        u.NombreCompleto,
+        u.CorreoElectronico,
+        u.RolID,
+        r.NombreRol,
+        u.Activo,
+        u.FechaRegistro
+    FROM dbo.Usuarios u WITH (NOLOCK)
+    INNER JOIN dbo.Roles r WITH (NOLOCK) ON r.RolID = u.RolID
+    ORDER BY u.UsuarioID DESC;
+END
+GO
+
+--Obtener usuarios
+CREATE OR ALTER PROCEDURE dbo.Usuario_Obtener
+    @UsuarioID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP 1
+        u.UsuarioID,
+        u.Cedula,
+        u.NombreCompleto,
+        u.CorreoElectronico,
+        u.RolID,
+        r.NombreRol,
+        u.Activo,
+        u.FechaRegistro
+    FROM Usuarios u
+    INNER JOIN Roles r ON r.RolID = u.RolID
+    WHERE u.UsuarioID = @UsuarioID;
+END
+GO
+
+--Crear usuario
+
+CREATE OR ALTER PROCEDURE dbo.Usuario_Crear
+    @Cedula           VARCHAR(50),
+    @NombreCompleto   VARCHAR(100),
+    @CorreoElectronico VARCHAR(100),
+    @ContrasenaHash   VARCHAR(255),
+    @RolID            INT,
+    @Activo           BIT = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        BEGIN TRAN;
+
+        IF EXISTS (SELECT 1 FROM Usuarios WHERE Cedula = @Cedula)
+            RAISERROR('La cédula ya existe.', 16, 1);
+
+        IF EXISTS (SELECT 1 FROM Usuarios WHERE CorreoElectronico = @CorreoElectronico)
+            RAISERROR('El correo electrónico ya existe.', 16, 1);
+
+        INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+        VALUES (@Cedula, @NombreCompleto, @CorreoElectronico, @ContrasenaHash, @RolID, @Activo);
+
+        DECLARE @NewID INT = SCOPE_IDENTITY();
+
+        COMMIT;
+        SELECT @NewID AS UsuarioID;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK;
+
+        IF ERROR_NUMBER() IN (2601, 2627)
+            RAISERROR('La cédula o el correo ya existe.', 16, 1);
+        ELSE
+            THROW;
+    END CATCH
+END
+GO
+
+
+-- Actualizar usuario
+CREATE OR ALTER PROCEDURE dbo.Usuario_Actualizar
+    @UsuarioID        INT,
+    @Cedula           VARCHAR(50),
+    @NombreCompleto   VARCHAR(100),
+    @CorreoElectronico VARCHAR(100),
+    @RolID            INT,
+    @Activo           BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        BEGIN TRAN;
+
+        IF NOT EXISTS (SELECT 1 FROM Usuarios WHERE UsuarioID = @UsuarioID)
+            RAISERROR('El usuario no existe.', 16, 1);
+
+        IF EXISTS (SELECT 1 FROM Usuarios WHERE Cedula = @Cedula AND UsuarioID <> @UsuarioID)
+            RAISERROR('La cédula ya existe.', 16, 1);
+
+        IF EXISTS (SELECT 1 FROM Usuarios WHERE CorreoElectronico = @CorreoElectronico AND UsuarioID <> @UsuarioID)
+            RAISERROR('El correo electrónico ya existe.', 16, 1);
+
+        UPDATE Usuarios
+        SET Cedula = @Cedula,
+            NombreCompleto = @NombreCompleto,
+            CorreoElectronico = @CorreoElectronico,
+            RolID = @RolID,
+            Activo = @Activo
+        WHERE UsuarioID = @UsuarioID;
+
+        COMMIT;
+        SELECT 1 AS Ok;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK;
+
+        IF ERROR_NUMBER() IN (2601, 2627)
+            RAISERROR('La cédula o el correo ya existe.', 16, 1);
+        ELSE
+            THROW;
+    END CATCH
+END
+GO
+
+-- Password reset
+CREATE OR ALTER PROCEDURE dbo.Usuario_ResetPassword
+    @UsuarioID        INT,
+    @ContrasenaHash   VARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Usuarios WHERE UsuarioID = @UsuarioID)
+        RAISERROR('El usuario no existe.', 16, 1);
+
+    UPDATE Usuarios
+    SET ContrasenaHash = @ContrasenaHash
+    WHERE UsuarioID = @UsuarioID;
+
+    SELECT 1 AS Ok;
+END
+GO
+
+CREATE OR ALTER PROCEDURE Doctor_ListaSimple
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        d.DoctorID,
+        u.NombreCompleto AS NombreCompleto,  -- <-- alias correcto
+        d.Especialidad
+    FROM Doctores d
+    INNER JOIN Usuarios u ON u.UsuarioID = d.UsuarioID
+    WHERE u.Activo = 1
+    ORDER BY u.NombreCompleto;
+END
+
+
 
 

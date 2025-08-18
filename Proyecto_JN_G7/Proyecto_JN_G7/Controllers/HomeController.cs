@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Proyecto_JN_G7.Models;
 using System.Diagnostics;
+using System.Text.Json;
 using static System.Net.WebRequestMethods;
 
 namespace Proyecto_JN_G7.Controllers
@@ -21,16 +22,15 @@ namespace Proyecto_JN_G7.Controllers
             throw new InvalidOperationException("Error de prueba desde Front-MVC");
         }
 
-
         public async Task<IActionResult> Index()
         {
             var client = _http.CreateClient("Api");
             var doctores = await client.GetFromJsonAsync<List<DoctorListItem>>("api/Doctor/ListaSimple")
-                           ?? new List<DoctorListItem>();
-
+                           ?? new();
             ViewBag.Doctores = doctores;
             return View();
         }
+
 
         public IActionResult Main()
         {

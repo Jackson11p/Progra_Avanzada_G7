@@ -1,6 +1,113 @@
-﻿<div class="card">
-    <div class="card-header"><i class="bi bi-shield-lock me-1"></i> Usuarios</div>
-    <div class="card-body">
-        <p class="text-muted">Aquí irá el CRUD de usuarios y roles.</p>
+﻿@* Views/Admin/Partials/_Usuarios.cshtml *@
+<div data-partial-name="Usuarios">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="fw-semibold"><i class="bi bi-shield-lock me-1"></i> Usuarios</div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-primary" id="u-btn-new">
+                    <i class="bi bi-plus-circle"></i> Nuevo
+                </button>
+                <button class="btn btn-sm btn-outline-primary" id="u-btn-reload" title="Recargar">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cédula</th>
+                        <th>Nombre</th>
+                        <th>Correo</th>
+                        <th>Rol</th>
+                        <th>Activo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="u-rows">
+                    <tr><td colspan="6" class="text-center text-muted py-4">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear/Editar (solo) -->
+<div class="modal fade" id="uModal" tabindex="-1" aria-hidden="true" aria-labelledby="uModalTitle">
+    <div class="modal-dialog">
+        <form class="modal-content" id="uForm">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uModalTitle">Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="uId" value="">
+                <div class="mb-2">
+                    <label class="form-label" for="uCedula">Cédula</label>
+                    <input type="text" class="form-control" id="uCedula" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label" for="uNombre">Nombre completo</label>
+                    <input type="text" class="form-control" id="uNombre" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label" for="uCorreo">Correo</label>
+                    <input type="email" class="form-control" id="uCorreo" required>
+                </div>
+
+                <!-- Solo se usa en "Nuevo" -->
+                <div class="mb-2" id="uPassBox">
+                    <label class="form-label" for="uPass">Contraseña</label>
+                    <input type="password" class="form-control" id="uPass" minlength="4" placeholder="Mínimo 4 caracteres">
+                </div>
+
+                <input type="hidden" id="uActivo" value="true" />
+
+                <div class="mb-0">
+                    <label class="form-label" for="uRol">Rol</label>
+                    <select id="uRol" class="form-select" required>
+                        <option value="">Seleccione un rol…</option>
+                        <!-- se llena por JS -->
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de confirmación (genérico) -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true" aria-labelledby="cfTitle">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-question-circle-fill me-2"></i>
+                    <span id="cfTitle">Confirmar</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body" id="cfMessage">¿Seguro?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="cfCancel">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="cfOk">
+                    <i class="bi bi-check2-circle me-1"></i><span id="cfOkText">Sí</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast (notificación) -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1080">
+    <div id="liveToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toastBody">Listo</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
     </div>
 </div>

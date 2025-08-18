@@ -129,3 +129,31 @@
         }
     });
 })();
+
+(function () {
+    const dept = document.getElementById('department');
+    const docSel = document.getElementById('doctor');
+    if (!dept || !docSel) return;
+
+    const allOptions = [...docSel.querySelectorAll('option')].slice(1);
+
+    function renderDoctors(filter) {
+        // reset opciones (deja la de "sin preferencia")
+        docSel.length = 1;
+
+        const toShow = !filter
+            ? allOptions
+            : allOptions.filter(o => (o.getAttribute('data-esp') || '').toLowerCase() === filter.toLowerCase());
+
+        toShow.forEach(o => docSel.add(o.cloneNode(true)));
+        docSel.value = ""; // reset selección
+    }
+
+    dept.addEventListener('change', () => {
+        const val = dept.value.trim();
+        renderDoctors(val === "" ? null : val);
+    });
+
+    // render inicial por si ya viene algo seleccionado
+    renderDoctors(dept.value.trim() || null);
+})();

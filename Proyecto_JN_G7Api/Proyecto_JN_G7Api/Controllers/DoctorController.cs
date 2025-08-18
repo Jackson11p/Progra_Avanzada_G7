@@ -29,16 +29,9 @@ namespace Proyecto_JN_G7Api.Controllers
         public IActionResult ListaSimple()
         {
             using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
-            var sql = @"
-                SELECT d.DoctorID,
-                       u.NombreCompleto AS Nombre,
-                       d.Especialidad
-                FROM Doctores d
-                INNER JOIN Usuarios u ON u.UsuarioID = d.UsuarioID
-                WHERE u.Activo = 1
-                ORDER BY u.NombreCompleto";
-            var data = conn.Query<DoctorListItem>(sql).ToList();
-            return Ok(data);
+            var data = conn.Query<DoctorListItem>("Doctor_ListaSimple",
+                         commandType: CommandType.StoredProcedure).ToList();
+            return Ok(data); 
         }
 
         //Registra un doctor
