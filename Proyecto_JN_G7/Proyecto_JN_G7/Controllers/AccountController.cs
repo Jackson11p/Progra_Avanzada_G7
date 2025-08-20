@@ -2,9 +2,12 @@
 using Proyecto_JN_G7.Models;
 using Proyecto_JN_G7.Services;
 using System.Net.Http.Json;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Proyecto_JN_G7.Controllers
 {
+    //Hace que reconozca las acciones de regresar de las flechitas del navegador
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public class AccountController : Controller
     {
         private readonly IHttpClientFactory _http;
@@ -57,6 +60,7 @@ namespace Proyecto_JN_G7.Controllers
                 if (contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase))
                 {
                     var respuesta = await resp.Content.ReadFromJsonAsync<RespuestaEstandar>();
+                    var datos = resp.Content.ReadFromJsonAsync<RespuestaEstandar<Autenticacion>>().Result;
                     ViewBag.Mensaje = respuesta?.Mensaje ?? "Credenciales inválidas";
                 }
                 else

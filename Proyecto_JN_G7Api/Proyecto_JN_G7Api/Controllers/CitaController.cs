@@ -77,7 +77,7 @@ namespace Proyecto_JN_G7Api.Controllers
             {
                 System.IO.File.AppendAllText("LogsCitasPublicas_Fallback.txt",
                     $"[{DateTimeOffset.UtcNow:O}] Error al registrar solicitud: {ex.Message}{Environment.NewLine}");
-                
+
             }
 
             return Ok(_utilitarios.RespuestaCorrecta(
@@ -105,7 +105,6 @@ namespace Proyecto_JN_G7Api.Controllers
         );
 
         [HttpPost]
-        [HttpPost]
         public IActionResult Crear([FromBody] CitaCreateReq dto)
         {
             if (dto.PacienteID <= 0 || dto.DoctorID <= 0 || dto.FechaHora == default)
@@ -131,6 +130,32 @@ namespace Proyecto_JN_G7Api.Controllers
             }
         }
 
+        //Obtiene las citas de un usuario
+        [HttpGet]
+        [Route("ConsultarCitasUsuario")]
+        public IActionResult ConsultarCitasUsuario(long UsuarioID)
+        {
+            using (var context = new SqlConnection(_configuration.GetSection("ConnectionStrings:Connection").Value))
+            {
+                var resultado = context.Query<CitasPorUsuarioUnificada>("CitasPorUsuarioUnificada",
+                    new 
+                    { 
+                        UsuarioID 
+                    },
+                commandType: CommandType.StoredProcedure);
+
+
+                if (resultado != null && resultado.Any())
+                {
+                    return Ok(_utilitarios.RespuestaCorrecta(resultado));
+                }
+                else
+                {
+                    return BadRequest(_utilitarios.RespuestaIncorrecta("No se encontraron citas"));
+                }
+            }
+        }
+
         [HttpPut("{id:int}")]
         public IActionResult Actualizar(int id, [FromBody] Models.Cita model)
         {
@@ -149,7 +174,7 @@ namespace Proyecto_JN_G7Api.Controllers
             return NoContent();
         }
 
-        [HttpDelete("{id:int}")] 
+        [HttpDelete("{id:int}")]
         public IActionResult Eliminar(int id)
         {
             using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));

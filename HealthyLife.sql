@@ -193,6 +193,28 @@ BEGIN
       AND Activo = 1;
 END
 
+GO
+CREATE OR ALTER PROCEDURE CitasPorUsuario
+    @UsuarioID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        c.CitaID,
+        c.PacienteID,
+        c.DoctorID,
+        c.FechaHora,
+        c.Estado,
+        c.MotivoConsulta,
+        c.FechaCreacion
+    FROM Citas c
+    INNER JOIN Pacientes p ON p.PacienteID = c.PacienteID
+    WHERE p.UsuarioID = @UsuarioID
+    ORDER BY c.FechaHora DESC;
+END
+
+
 
 -- Validar Correo --
 GO
@@ -1045,6 +1067,34 @@ BEGIN
   JOIN Usuarios  u ON u.UsuarioID = p.UsuarioID
   WHERE p.PacienteID = @PacienteID;
 END
+
+--Agarra el id de usuario > lo busca en paciente > con paciente obtiene las citas
+GO
+CREATE OR ALTER PROCEDURE CitasPorUsuarioUnificada
+    @UsuarioID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        c.CitaID,
+        c.FechaHora,
+        c.Estado,
+        c.MotivoConsulta,
+        c.FechaCreacion,
+        p.PacienteID,
+        p.NombreCompleto AS NombrePaciente,
+        d.DoctorID,
+        u.NombreCompleto AS NombreDoctor
+    FROM Citas c
+    INNER JOIN Pacientes p ON p.PacienteID = c.PacienteID
+    LEFT JOIN Doctores d ON d.DoctorID = c.DoctorID
+    LEFT JOIN Usuarios u ON u.UsuarioID = d.UsuarioID
+    WHERE p.UsuarioID = @UsuarioID
+    ORDER BY c.FechaHora DESC;
+END
+
+EXEC CitasPorUsuarioUnificada @UsuarioID = 4;
 
 -- Paciente_Actualizar --
 GO

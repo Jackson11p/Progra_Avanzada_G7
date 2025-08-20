@@ -43,6 +43,58 @@ namespace Proyecto_JN_G7.Controllers
                 }
             }
         }
+
+        [HttpPost]
+        public IActionResult RegistroCitaCliente(Citas model)
+        {
+            using (var http = _http.CreateClient())
+            {
+                http.BaseAddress = new Uri(_configuration.GetSection("Start:ApiUrl").Value!);
+                var resultado = http.PostAsJsonAsync("api/Cita/RegistroCitaCliente", model).Result;
+
+                if (resultado.IsSuccessStatusCode)
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                    var respuesta = resultado.Content.ReadFromJsonAsync<RespuestaEstandar>().Result;
+                    ViewBag.Mensaje = respuesta?.Mensaje;
+                    return View();
+                }
+            }
+        }
+
+        //Carga la info de las citas
+        [HttpGet]
+        public IActionResult ConsultarCitasUsuario()
+        {
+            using (var http = _http.CreateClient())
+            {
+                // Obtiene el UsuarioID de la sesión de AccountController
+                var UsuarioID = HttpContext.Session.GetString("UsuarioID");
+
+                http.BaseAddress = new Uri(_configuration.GetSection("Start:ApiUrl").Value!);
+                http.DefaultRequestHeaders.Add("Authorization", "Bearer " + HttpContext.Session.GetString("JWT"));
+
+                var resultado = http.GetAsync("api/Cita/ConsultarCitasUsuario?UsuarioID=" + UsuarioID).Result;
+
+                if (resultado.IsSuccessStatusCode)
+                {
+                    //Lista lo que obtiene CitasPorUsuarioUnificada
+                    var datos = resultado.Content.ReadFromJsonAsync<RespuestaEstandar<List<CitasPorUsuarioUnificada>>>().Result;
+                    return View(datos?.Contenido!);
+                }
+                else
+                {
+                    var respuesta = resultado.Content.ReadFromJsonAsync<RespuestaEstandar>().Result;
+                    ViewBag.Mensaje = respuesta?.Mensaje;
+                    return View();
+                }
+            }
+        }
+
+
         #endregion
 
         public IActionResult Index()

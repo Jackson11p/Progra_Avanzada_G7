@@ -1,0 +1,63 @@
+﻿@model List<Proyecto_JN_G7.Models.CitasPorUsuarioUnificada>
+@{
+    Layout = "_Layout";
+}
+
+<section id="appointments" class="appointment section">
+    <div class="container section-title" data-aos="fade-up">
+        <h2>Mis Citas</h2>
+        <p>Aquí puedes ver todas las citas que tienes registradas en HealthyLife.</p>
+    </div>
+
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+        @if (Model != null && Model.Any())
+        {
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Estado</th>
+                        <th>Motivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Count; i++)
+                    {
+                        <tr>
+                            <td>@(i + 1)</td>
+                            <td>@Model[i].FechaHora.ToString("dd/MM/yyyy")</td>
+                            <td>@Model[i].FechaHora.ToString("HH:mm")</td>
+                            <td>
+                                @if (Model[i].Estado == "Pendiente")
+                                {
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                }
+                                else if (Model[i].Estado == "Completada")
+                                {
+                                    <span class="badge bg-success">Completada</span>
+                                }
+                                else if (Model[i].Estado == "Cancelada")
+                                {
+                                    <span class="badge bg-danger">Cancelada</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">@Model[i].Estado</span>
+                                }
+                            </td>
+                            <td>@Model[i].MotivoConsulta</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-info text-center mt-4">
+                No tienes citas registradas.
+            </div>
+        }
+    </div>
+</section>

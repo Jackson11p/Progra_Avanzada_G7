@@ -6,6 +6,8 @@ using static System.Net.WebRequestMethods;
 
 namespace Proyecto_JN_G7.Controllers
 {
+    //Hace que reconozca las acciones de regresar de las flechitas del navegador
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
