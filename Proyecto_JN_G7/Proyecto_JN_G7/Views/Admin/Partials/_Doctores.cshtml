@@ -45,7 +45,9 @@
                             <td>@doctor.CedulaProfesional</td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalEditarDoctor@doctor.DoctorID">
+                                    <button type="button" class="btn btn-outline-secondary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalEditarDoctor@doctor.DoctorID">
                                         <i class="bi bi-pencil-square"></i> Editar
                                     </button>
                                 </div>
@@ -99,6 +101,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
+                    <!-- Hidden con el ID único -->
                     <input type="hidden" name="DoctorID" value="@doctor.DoctorID" />
 
                     <div class="mb-2">
@@ -117,5 +120,6 @@
             </form>
         </div>
     </div>
-
 }
+
+
