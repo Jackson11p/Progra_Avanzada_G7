@@ -34,7 +34,7 @@
                 sel.add(opt);
             });
             if (selected) sel.value = String(selected);
-            if (!sel.value) sel.value = '1'; // por defecto "Usuario"
+            if (!sel.value) sel.value = '1';  //default Usuario
         } catch (err) {
             console.error('Roles error', err);
             alert('No se pudieron cargar los roles.');
@@ -91,7 +91,7 @@
         set('#uActivo', 'true');
         get('#uPassBox')?.classList.remove('d-none');
         get('#uModalTitle').textContent = 'Nuevo usuario';
-        await cargarRoles('1'); // default Usuario
+        await cargarRoles('1'); //default Usuario
         modal('uModal')?.show();
     }
 
@@ -101,7 +101,7 @@
             const text = await r.text();
             if (!r.ok) throw new Error(text || r.status);
             const env = parseJson(text);
-            const u = (env && env.contenido) ? env.contenido : env; // soporta sobre o plano
+            const u = (env && env.contenido) ? env.contenido : env; 
 
             set('#uId', String(u.usuarioID ?? ''));
             set('#uCedula', u.cedula ?? '');
@@ -109,7 +109,7 @@
             set('#uCorreo', u.correoElectronico ?? '');
             set('#uPass', '');
             set('#uActivo', String(!!u.activo));
-            get('#uPassBox')?.classList.add('d-none'); // no se cambia contraseña aquí
+            get('#uPassBox')?.classList.add('d-none');
             get('#uModalTitle').textContent = 'Editar usuario';
 
             await cargarRoles(String(u.rolID ?? ''));
@@ -273,13 +273,11 @@ async function confirmNice({
 
         okBtn.addEventListener('click', handleOk, { once: true });
         cancelBtn.addEventListener('click', handleCancel, { once: true });
-        // Si se cierra con X o clic fuera, se considera "cancelar"
         el.addEventListener('hidden.bs.modal', handleHidden, { once: true });
 
         m.show();
     });
 }
-
 
 // Toast de éxito/error
 function toastMsg(message, success = true) {

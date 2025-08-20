@@ -1,6 +1,122 @@
-﻿<div class="card">
-    <div class="card-header"><i class="bi bi-people me-1"></i> Pacientes</div>
-    <div class="card-body">
-        <p class="text-muted">Aquí irá el CRUD de pacientes.</p>
+﻿@* Parcial: Pacientes *@
+<div data-partial-name="Pacientes">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="fw-semibold"><i class="bi bi-people me-1"></i> Pacientes</div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-primary" id="p-btn-new">
+                    <i class="bi bi-plus-circle"></i> Nuevo
+                </button>
+                <button class="btn btn-sm btn-outline-primary" id="p-btn-reload" title="Recargar">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cédula</th>
+                        <th>Nombre</th>
+                        <th>Correo</th>
+                        <th>Teléfono</th>
+                        <th>F. Nacimiento</th>
+                        <th>Género</th>
+                        <th>Activo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="p-rows">
+                    <tr><td colspan="8" class="text-center text-muted py-4">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear/Editar -->
+<div class="modal fade" id="pModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" id="pForm">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pModalTitle">Paciente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="pId" value="">
+                <input type="hidden" id="pActivo" value="true">
+
+                <div class="mb-2">
+                    <label class="form-label">Cédula</label>
+                    <input type="text" class="form-control" id="pCedula" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Nombre completo</label>
+                    <input type="text" class="form-control" id="pNombre" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Correo</label>
+                    <input type="email" class="form-control" id="pCorreo" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Teléfono</label>
+                    <input type="text" class="form-control" id="pTelefono">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Fecha de nacimiento</label>
+                    <input type="date" class="form-control" id="pFechaNac">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Género</label>
+                    <select id="pGenero" class="form-select">
+                        <option value="">—</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                        <option value="O">Otro</option>
+                    </select>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label">Dirección</label>
+                    <textarea class="form-control" id="pDireccion" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de confirmación  -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-question-circle-fill me-2"></i>
+                    <span id="cfTitle">Confirmar</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="cfMessage">¿Seguro?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="cfCancel">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="cfOk">
+                    <i class="bi bi-check2-circle me-1"></i><span id="cfOkText">Sí</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1080">
+    <div id="liveToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toastBody">Listo</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
     </div>
 </div>

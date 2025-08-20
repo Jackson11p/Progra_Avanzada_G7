@@ -57,10 +57,12 @@ namespace Proyecto_JN_G7Api.Controllers
             public string CorreoElectronico { get; set; } = "";
             public string? ContrasenaHash { get; set; }
             public string? Telefono { get; set; }
-            public DateTime? FechaNacimiento { get; set; }
+            public string? FechaNacimiento { get; set; }
             public string? Genero { get; set; }
             public string? Direccion { get; set; }
         }
+
+        public class PacienteDetalle : PacienteAdminItem { }
 
         [HttpPost]
         public IActionResult Crear([FromBody] PacienteCrearReq body)
@@ -72,6 +74,15 @@ namespace Proyecto_JN_G7Api.Controllers
                 return BadRequest(_utilitarios.RespuestaIncorrecta("Cédula, nombre y correo son obligatorios."));
             }
 
+            static string? NN(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
+
+            DateTime? fn = null;
+            if (!string.IsNullOrWhiteSpace(body.FechaNacimiento) &&
+                DateTime.TryParse(body.FechaNacimiento, out var dt))
+            {
+                fn = dt.Date;
+            }
+
             using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
             var id = conn.QuerySingle<int>("Paciente_Crear", new
             {
@@ -79,14 +90,83 @@ namespace Proyecto_JN_G7Api.Controllers
                 body.NombreCompleto,
                 body.CorreoElectronico,
                 body.ContrasenaHash,
-                body.Telefono,
-                body.FechaNacimiento,
-                body.Genero,
-                body.Direccion
+                Telefono = NN(body.Telefono),
+                FechaNacimiento = fn,
+                Genero = NN(body.Genero),
+                Direccion = NN(body.Direccion)
             }, commandType: CommandType.StoredProcedure);
 
             return Ok(new { pacienteID = id });
         }
+
+        [HttpGet]
+        public IActionResult Listar([FromQuery] string? q)
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var items = conn.Query<PacienteAdminItem>("Paciente_Listar", new { q }, commandType: CommandType.StoredProcedure);
+            return Ok(_utilitarios.RespuestaCorrecta(items));
+        }
+
+        [HttpGet("{id:int}")]
+        public IActionResult Obtener(int id)
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var item = conn.QueryFirstOrDefault<PacienteDetalle>("Paciente_Obtener", new { PacienteID = id }, commandType: CommandType.StoredProcedure);
+            return item is null
+                ? NotFound(_utilitarios.RespuestaIncorrecta("Paciente no encontrado."))
+                : Ok(_utilitarios.RespuestaCorrecta(item));
+        }
+
+        [HttpPut("{id:int}")]
+        public IActionResult Actualizar(int id, [FromBody] PacienteActualizarReq body)
+        {
+            if (string.IsNullOrWhiteSpace(body.Cedula) ||
+                string.IsNullOrWhiteSpace(body.NombreCompleto) ||
+                string.IsNullOrWhiteSpace(body.CorreoElectronico))
+            {
+                return BadRequest(_utilitarios.RespuestaIncorrecta("Cédula, nombre y correo son obligatorios."));
+            }
+
+            static string? NN(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
+
+            DateTime? fn = null;
+            if (!string.IsNullOrWhiteSpace(body.FechaNacimiento) &&
+                DateTime.TryParse(body.FechaNacimiento, out var dt))
+            {
+                fn = dt.Date;
+            }
+
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            conn.Execute("Paciente_Actualizar", new
+            {
+                PacienteID = id,
+                body.Cedula,
+                body.NombreCompleto,
+                body.CorreoElectronico,
+                Telefono = NN(body.Telefono),
+                FechaNacimiento = fn,
+                Genero = NN(body.Genero),
+                Direccion = NN(body.Direccion)
+            }, commandType: CommandType.StoredProcedure);
+
+            return NoContent();
+        }
+
+
+        [HttpPut("{id:int}/estado/toggle")]
+        public IActionResult ToggleEstado(int id)
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+
+            var activo = conn.QuerySingle<bool>(
+                "Paciente_ToggleEstado",
+                new { PacienteID = id },
+                commandType: CommandType.StoredProcedure
+            );
+
+            return Ok(_utilitarios.RespuestaCorrecta(new { Activo = activo, Mensaje = "Estado actualizado." }));
+        }
+
 
     }
 }

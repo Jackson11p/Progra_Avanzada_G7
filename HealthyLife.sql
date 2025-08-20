@@ -988,6 +988,115 @@ BEGIN
     ORDER BY u.NombreCompleto;
 END
 
+CREATE OR ALTER PROCEDURE dbo.Paciente_ToggleEstado
+  @PacienteID INT
+AS
+BEGIN
+  SET NOCOUNT ON;
 
+  DECLARE @UsuarioID INT = (SELECT UsuarioID FROM Pacientes WHERE PacienteID=@PacienteID);
+  IF @UsuarioID IS NULL
+  BEGIN
+    RAISERROR('Paciente no existe.',16,1);
+    RETURN;
+  END
+
+  UPDATE Usuarios
+     SET Activo = CASE WHEN Activo=1 THEN 0 ELSE 1 END
+   WHERE UsuarioID=@UsuarioID;
+
+  SELECT Activo FROM Usuarios WHERE UsuarioID=@UsuarioID;
+END
+
+
+CREATE OR ALTER PROCEDURE dbo.Paciente_Listar
+  @q VARCHAR(100) = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT 
+    p.PacienteID,
+    p.UsuarioID,
+    COALESCE(u.Cedula, p.Cedula)           AS Cedula,
+    COALESCE(u.NombreCompleto, p.NombreCompleto) AS NombreCompleto,
+    COALESCE(u.CorreoElectronico, p.CorreoElectronico) AS CorreoElectronico,
+    p.Telefono,
+    p.FechaNacimiento,
+    p.Genero,
+    p.Direccion,
+    u.Activo
+  FROM Pacientes p
+  JOIN Usuarios  u ON u.UsuarioID = p.UsuarioID
+  WHERE @q IS NULL OR
+        u.Cedula           LIKE '%'+@q+'%' OR
+        u.NombreCompleto   LIKE '%'+@q+'%' OR
+        u.CorreoElectronico LIKE '%'+@q+'%'
+  ORDER BY u.NombreCompleto;
+END
+
+
+CREATE OR ALTER PROCEDURE dbo.Paciente_Obtener
+  @PacienteID INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT TOP 1
+    p.PacienteID,
+    p.UsuarioID,
+    COALESCE(u.Cedula, p.Cedula)           AS Cedula,
+    COALESCE(u.NombreCompleto, p.NombreCompleto) AS NombreCompleto,
+    COALESCE(u.CorreoElectronico, p.CorreoElectronico) AS CorreoElectronico,
+    p.Telefono,
+    p.FechaNacimiento,
+    p.Genero,
+    p.Direccion,
+    u.Activo
+  FROM Pacientes p
+  JOIN Usuarios  u ON u.UsuarioID = p.UsuarioID
+  WHERE p.PacienteID = @PacienteID;
+END
+
+CREATE OR ALTER PROCEDURE dbo.Paciente_Actualizar
+  @PacienteID       INT,
+  @Cedula           VARCHAR(50),
+  @NombreCompleto   VARCHAR(100),
+  @CorreoElectronico VARCHAR(100),
+  @Telefono         VARCHAR(20)  = NULL,
+  @FechaNacimiento  DATE         = NULL,
+  @Genero           VARCHAR(10)  = NULL,
+  @Direccion        VARCHAR(200) = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SET XACT_ABORT ON;
+
+  BEGIN TRAN;
+
+    DECLARE @UsuarioID INT = (SELECT UsuarioID FROM Pacientes WHERE PacienteID = @PacienteID);
+    IF @UsuarioID IS NULL
+    BEGIN
+      RAISERROR('Paciente no existe.',16,1);
+      ROLLBACK TRAN;
+      RETURN;
+    END
+
+    UPDATE Usuarios
+      SET Cedula=@Cedula, NombreCompleto=@NombreCompleto, CorreoElectronico=@CorreoElectronico
+    WHERE UsuarioID=@UsuarioID;
+
+    UPDATE Pacientes
+      SET Telefono=@Telefono,
+          FechaNacimiento=@FechaNacimiento,
+          Genero=@Genero,
+          Direccion=@Direccion,
+          Cedula=@Cedula,
+          NombreCompleto=@NombreCompleto,
+          CorreoElectronico=@CorreoElectronico
+    WHERE PacienteID=@PacienteID;
+
+  COMMIT;
+END
 
 
