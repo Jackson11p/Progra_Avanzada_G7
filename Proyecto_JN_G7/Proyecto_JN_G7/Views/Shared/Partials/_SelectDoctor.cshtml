@@ -1,8 +1,18 @@
 ﻿@model IEnumerable<Proyecto_JN_G7.Models.DoctorListItem>
-<select name="doctor" id="doctor" class="form-select" aria-label="Seleccione un médico">
-    <option value="">Sin preferencia de médico</option>
+@{
+    var selectId = (string)(ViewData["SelectId"] ?? "doctor");
+    var selectName = (string)(ViewData["SelectName"] ?? selectId);
+
+}
+
+<select id="@selectId" name="@selectName" class="form-select" required>
+    <option value="" disabled selected>Seleccione un médico</option>
+
     @foreach (var d in Model)
     {
-        <option value="@d.NombreCompleto">@d.NombreCompleto — @d.Especialidad</option>
+        <option value="@d.DoctorID" data-id="@d.DoctorID">
+            @d.NombreCompleto (@d.Especialidad)
+        </option>
     }
 </select>
+<div class="invalid-feedback">Seleccione un médico.</div>

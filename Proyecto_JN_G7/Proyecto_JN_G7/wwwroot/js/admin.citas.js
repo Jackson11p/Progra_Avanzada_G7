@@ -1,282 +1,291 @@
 ﻿(() => {
     'use strict';
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
+    if (window.__citasBound) return;
+    window.__citasBound = true;
+
+    const root = document.getElementById('adminContent');
+    if (!root) return;
+
+    const API = window.ApiBaseUrl;
+
+    // Helpers básicos
+    const dq = (s) => document.querySelector(s);
+    const val = (s) => (dq(s)?.value ?? '').trim();
+    const set = (s, v) => { const el = dq(s); if (el) el.value = v ?? ''; };
+    const modal = (id) => {
+        const el = document.getElementById(id);
+        return el ? bootstrap.Modal.getOrCreateInstance(el) : null;
+    };
+    const reloadCitas = () => {
+        const a = document.querySelector('#adminSidebar [data-partial="Citas"]');
+        if (a) a.click();
+    };
+
+    // Lee un <select> y devuelve el entero del doctor (value o data-id)
+    function getSelectedInt(sel) {
+        const el = dq(sel);
+        if (!el) return 0;
+
+        const v = (el.value ?? '').trim();
+        if (/^\d+$/.test(v)) return parseInt(v, 10);
+
+        const opt = el.options[el.selectedIndex];
+        const d = (opt?.getAttribute('data-id') ?? '').trim();
+        return /^\d+$/.test(d) ? parseInt(d, 10) : 0;
     }
 
-    function init() {
-        const content = document.getElementById('adminContent');
-        if (!content) return;
+    // ---------- NUEVA CITA ----------
+    root.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action="new-cita"]');
+        if (!btn) return;
 
-        // Helpers únicos
-        const getValue = sel => (document.querySelector(sel)?.value ?? '').trim();
-        const setValue = (sel, v) => { const el = document.querySelector(sel); if (el) el.value = v ?? ''; };
-        const getModal = id => {
-            const el = document.getElementById(id);
-            return el ? bootstrap.Modal.getOrCreateInstance(el) : null;
+        set('#citaId', '');
+        set('#pacienteEdit', '');
+        set('#doctorEdit', '');
+        set('#fechaHora', '');
+        set('#estado', 'Pendiente');
+        set('#motivo', '');
+
+        const title = document.getElementById('modalCitaTitle');
+        if (title) title.textContent = 'Nueva cita';
+
+        modal('modalCita')?.show();
+    });
+
+    // ---------- EDITAR CITA ----------
+    root.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action="edit-cita"]');
+        if (!btn) return;
+
+        set('#citaId', btn.dataset.citaId ?? '');
+        set('#pacienteEdit', btn.dataset.pacienteId ?? '');
+        set('#doctorEdit', btn.dataset.doctorId ?? '');
+        set('#fechaHora', btn.dataset.fecha ?? '');
+        set('#estado', btn.dataset.estado ?? 'Pendiente');
+        set('#motivo', btn.dataset.motivo ?? '');
+
+        const title = document.getElementById('modalCitaTitle');
+        if (title) title.textContent = 'Editar cita';
+
+        modal('modalCita')?.show();
+    });
+
+    // ---------- GUARDAR CITA (crear/actualizar) ----------
+    root.addEventListener('submit', async (e) => {
+        const form = e.target.closest('#formCita');
+        if (!form) return;
+        e.preventDefault();
+
+        const id = val('#citaId');
+        const body = {
+            PacienteID: parseInt(val('#pacienteEdit') || '0', 10),
+            DoctorID: getSelectedInt('#doctorEdit'),
+            FechaHora: val('#fechaHora'),
+            Estado: val('#estado') || 'Pendiente',
+            MotivoConsulta: val('#motivo') || ''
         };
-        const reloadCitas = () => {
-            const a = document.querySelector('#adminSidebar [data-partial="Citas"]');
-            if (a) a.click();
-        };
 
-        // ---------- NUEVA CITA ----------
-        content.addEventListener('click', e => {
-            const btn = e.target.closest('[data-action="new-cita"]');
-            if (!btn) return;
+        if (!body.PacienteID) return alert('Seleccione un paciente.');
+        if (!body.DoctorID) return alert('Seleccione un doctor.');
+        if (!body.FechaHora) return alert('Seleccione fecha y hora.');
 
-            setValue('#citaId', '');
-            setValue('#pacienteEdit', '');
-            setValue('#doctorEdit', '');   
-            setValue('#fechaHora', '');
-            setValue('#estado', 'Pendiente');
-            setValue('#motivo', '');
+        const url = id ? `${API}api/Cita/${id}` : `${API}api/Cita`;
+        const method = id ? 'PUT' : 'POST';
 
-            const title = document.getElementById('modalCitaTitle');
-            if (title) title.textContent = 'Nueva cita';
-            getModal('modalCita')?.show();
+        const resp = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
         });
 
-        // ---------- EDITAR CITA ----------
-        content.addEventListener('click', e => {
-            const btn = e.target.closest('[data-action="edit-cita"]');
-            if (!btn) return;
+        if (!resp.ok) {
+            const txt = await resp.text();
+            alert(`No se pudo guardar la cita.\n${txt || ''}`);
+            return;
+        }
 
-            setValue('#citaId', btn.dataset.citaId || '');
-            setValue('#pacienteEdit', btn.dataset.pacienteId || '');
-            setValue('#doctorEdit', btn.dataset.doctorId || '');
-            setValue('#fechaHora', btn.dataset.fecha || '');
-            setValue('#estado', btn.dataset.estado || 'Pendiente');
-            setValue('#motivo', btn.dataset.motivo || '');
+        modal('modalCita')?.hide();
+        reloadCitas();
+    });
 
-            const title = document.getElementById('modalCitaTitle');
-            if (title) title.textContent = 'Editar cita';
-            getModal('modalCita')?.show();
-        });
+    // ---------- ELIMINAR CITA ----------
+    root.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action="delete-cita"]');
+        if (!btn) return;
+        if (!confirm('¿Eliminar esta cita?')) return;
 
-        // ---------- GUARDAR CITA (crear/actualizar) ----------
-        content.addEventListener('submit', async e => {
-            const form = e.target.closest('#formCita');
-            if (!form) return;
-            e.preventDefault();
+        const id = btn.dataset.citaId;
+        const resp = await fetch(`${API}api/Cita/${id}`, { method: 'DELETE' });
 
-            const pid = parseInt(getValue('#pacienteEdit'), 10);
-            const did = parseInt(getValue('#doctorEdit'), 10);
-            const fecha = getValue('#fechaHora');
+        if (!resp.ok) {
+            alert('No se pudo eliminar la cita.');
+            return;
+        }
+        reloadCitas();
+    });
 
-            if (!Number.isInteger(pid) || pid <= 0) { alert('Seleccione un paciente.'); return; }
-            if (!Number.isInteger(did) || did <= 0) { alert('Seleccione un doctor.'); return; }
-            if (!fecha) { alert('Seleccione fecha y hora.'); return; }
+    // ---------- ATENDER SOLICITUD ----------
+    root.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action="attend-solicitud"]');
+        if (!btn) return;
 
-            const id = (getValue('#citaId') || '').trim();
-            const url = id
-                ? `${window.ApiBaseUrl}api/Cita/${id}`
-                : `${window.ApiBaseUrl}api/Cita`;
+        set('#solicitudId', btn.dataset.solicitudId ?? '');
+        set('#a_motivo', btn.dataset.motivo ?? '');
+        set('#a_fechaHora', '');
+        set('#a_estado', 'Pendiente');
+        set('#a_pacienteSelect', '');
+        document.getElementById('a_pacienteHint')?.classList.add('d-none');
 
-            const body = {
-                PacienteID: pid,
-                DoctorID: did,
-                FechaHora: fecha,
-                Estado: getValue('#estado') || 'Pendiente',
-                MotivoConsulta: getValue('#motivo') || null
-            };
-
+        // Buscar paciente por email
+        const email = btn.dataset.email || '';
+        if (email) {
             try {
-                const resp = await fetch(url, {
-                    method: id ? 'PUT' : 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-
-                if (!resp.ok) {
-                    const txt = await resp.text();
-                    console.error('Error al guardar cita:', resp.status, txt);
-                    alert(`No se pudo guardar la cita.\n${resp.status}\n${txt || ''}`);
-                    return;
+                const r = await fetch(`${API}api/Paciente/Buscar?email=${encodeURIComponent(email)}`);
+                if (r.ok) {
+                    const p = await r.json();
+                    set('#a_pacienteSelect', String(p.pacienteID ?? p.PacienteID ?? ''));
+                } else {
+                    document.getElementById('a_pacienteHint')?.classList.remove('d-none');
                 }
+            } catch { /* no-op */ }
+        }
 
-                getModal('modalCita')?.hide();
-                reloadCitas();
-            } catch (err) {
-                console.error(err);
-                alert('Error de red al guardar la cita.');
-            }
+
+        const fp = document.getElementById('formPaciente');
+        if (fp) fp.dataset.targetSelect = '#a_pacienteSelect';
+        set('#p_nombre', btn.dataset.nombre || '');
+        set('#p_email', email);
+
+        modal('modalAtender')?.show();
+    });
+
+    // ---------- CREAR CITA DESDE SOLICITUD ----------
+    root.addEventListener('submit', async (e) => {
+        const form = e.target.closest('#formAtender');
+        if (!form) return;
+        e.preventDefault();
+
+        const sid = val('#solicitudId');
+        const body = {
+            PacienteID: parseInt(val('#a_pacienteSelect') || '0', 10),
+            DoctorID: getSelectedInt('#a_doctorSelect'),
+            FechaHora: val('#a_fechaHora'),
+            Estado: val('#a_estado'),
+            MotivoConsulta: val('#a_motivo')
+        };
+
+        if (!body.PacienteID) return alert('Seleccione un paciente.');
+        if (!body.DoctorID) return alert('Seleccione un doctor.');
+        if (!body.FechaHora) return alert('Seleccione fecha y hora.');
+
+        const resp = await fetch(`${API}api/Cita/Solicitudes/${sid}/Atender`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
         });
 
-        // ---------- ELIMINAR CITA ----------
-        content.addEventListener('click', async e => {
-            const btn = e.target.closest('[data-action="delete-cita"]');
-            if (!btn) return;
-            if (!confirm('¿Eliminar esta cita?')) return;
+        if (!resp.ok) {
+            const txt = await resp.text();
+            alert(`No se pudo atender la solicitud.\n${txt || ''}`);
+            return;
+        }
 
-            const id = btn.dataset.citaId;
-            const resp = await fetch(`${window.ApiBaseUrl}api/Cita/${id}`, { method: 'DELETE' });
-            if (!resp.ok) {
-                alert('No se pudo eliminar la cita.');
-                return;
-            }
-            reloadCitas();
-        });
+        modal('modalAtender')?.hide();
+        reloadCitas();
+    });
 
-        // ---------- ATENDER SOLICITUD ----------
-        content.addEventListener('click', async e => {
-            const btn = e.target.closest('[data-action="attend-solicitud"]');
-            if (!btn) return;
+    // ---------- DESCARTAR SOLICITUD ----------
+    root.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action="delete-solicitud"]');
+        if (!btn) return;
+        if (!confirm('¿Descartar esta solicitud?')) return;
 
-            setValue('#solicitudId', btn.dataset.solicitudId || '');
-            setValue('#a_motivo', btn.dataset.motivo || '');
-            setValue('#a_fechaHora', '');
-            setValue('#a_estado', 'Pendiente');
+        const sid = btn.dataset.solicitudId;
+        const resp = await fetch(`${API}api/Cita/Solicitudes/${sid}`, { method: 'DELETE' });
 
-            setValue('#a_pacienteSelect', '');
-            document.getElementById('a_pacienteHint')?.classList.add('d-none');
+        if (!resp.ok) {
+            alert('No se pudo descartar la solicitud.');
+            return;
+        }
+        reloadCitas();
+    });
 
-            const docAtVal = getValue('#a_doctorSelect');
-            if (!docAtVal) {
-                document.querySelector('#a_doctorSelect')?.classList.add('is-invalid');
-                return;
-            }
-            document.querySelector('#a_doctorSelect')?.classList.remove('is-invalid');
+    // ---------- CREAR PACIENTE  ----------
+    root.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action="open-new-paciente"]');
+        if (!btn) return;
 
-            const email = btn.dataset.email || '';
-            if (email) {
-                try {
-                    const resp = await fetch(`${window.ApiBaseUrl}api/Paciente/Buscar?email=${encodeURIComponent(email)}`);
-                    if (resp.ok) {
-                        const p = await resp.json();
-                        setValue('#a_pacienteSelect', String(p.pacienteID));
-                    } else {
-                        document.getElementById('a_pacienteHint')?.classList.remove('d-none');
-                    }
-                } catch { /* no-op */ }
-            }
+        const fp = document.getElementById('formPaciente');
+        if (fp) fp.dataset.targetSelect = btn.dataset.targetSelect || '#pacienteEdit';
 
-            // Para crear paciente y que apunte a este select:
-            const fp = document.getElementById('formPaciente');
-            if (fp) fp.dataset.targetSelect = '#a_pacienteSelect';
-            // Prellenar modal de paciente:
-            setValue('#p_nombre', btn.dataset.nombre || '');
-            setValue('#p_email', email);
+        if (!val('#p_nombre')) set('#p_nombre', '');
+        if (!val('#p_email')) set('#p_email', '');
 
-            getModal('modalAtender')?.show();
-        });
+        set('#p_cedula', '');
+        set('#p_pass', '');
 
-        // ---------- CREAR CITA DESDE SOLICITUD ----------
-        content.addEventListener('submit', async e => {
-            const form = e.target.closest('#formAtender');
-            if (!form) return;
-            e.preventDefault();
+        modal('modalPaciente')?.show();
+    });
 
-            const sid = getValue('#solicitudId');
-            const body = {
-                PacienteID: parseInt(getValue('#a_pacienteSelect'), 10),
-                DoctorID: parseInt(getValue('#a_doctorSelect'), 10),
-                FechaHora: getValue('#a_fechaHora'),
-                Estado: getValue('#a_estado'),
-                MotivoConsulta: getValue('#a_motivo')
-            };
+    root.addEventListener('submit', async (e) => {
+        const form = e.target.closest('#formPaciente');
+        if (!form) return;
+        e.preventDefault();
 
-            const resp = await fetch(`${window.ApiBaseUrl}api/Cita/Solicitudes/${sid}/Atender`, {
+        const body = {
+            cedula: val('#p_cedula'),
+            nombreCompleto: val('#p_nombre'),
+            correoElectronico: val('#p_email'),
+            contrasena: val('#p_pass') || null
+        };
+
+        if (!body.cedula || !body.nombreCompleto || !body.correoElectronico) {
+            alert('Cédula, nombre y correo son obligatorios.');
+            return;
+        }
+
+        try {
+            const r = await fetch(`${API}api/Paciente`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
 
-            if (!resp.ok) {
-                alert('No se pudo atender la solicitud.');
-                return;
-            }
-            getModal('modalAtender')?.hide();
-            reloadCitas();
-        });
-
-        // ---------- DESCARTAR SOLICITUD ----------
-        content.addEventListener('click', async e => {
-            const btn = e.target.closest('[data-action="delete-solicitud"]');
-            if (!btn) return;
-            if (!confirm('¿Descartar esta solicitud?')) return;
-
-            const sid = btn.dataset.solicitudId;
-            const resp = await fetch(`${window.ApiBaseUrl}api/Cita/Solicitudes/${sid}`, { method: 'DELETE' });
-            if (!resp.ok) {
-                alert('No se pudo descartar la solicitud.');
-                return;
-            }
-            reloadCitas();
-        });
-
-        // ---------- ABRIR MODAL "CREAR PACIENTE" ----------
-        content.addEventListener('click', e => {
-            const btn = e.target.closest('[data-action="open-new-paciente"]');
-            if (!btn) return;
-
-            const fp = document.getElementById('formPaciente');
-            if (fp) fp.dataset.targetSelect = btn.dataset.targetSelect || '#pacienteEdit';
-
-            // Si no estaban prellenados por "Atender", se limpian:
-            if (!getValue('#p_nombre')) setValue('#p_nombre', '');
-            if (!getValue('#p_email')) setValue('#p_email', '');
-            setValue('#p_cedula', '');
-            setValue('#p_pass', '');
-
-            getModal('modalPaciente')?.show();
-        });
-
-        // ---------- SUBMIT "CREAR PACIENTE" ----------
-        content.addEventListener('submit', async e => {
-            const form = e.target.closest('#formPaciente');
-            if (!form) return;
-            e.preventDefault();
-
-            const body = {
-                cedula: getValue('#p_cedula'),
-                nombreCompleto: getValue('#p_nombre'),
-                correoElectronico: getValue('#p_email'),
-                contrasena: getValue('#p_pass') || null
-            };
-
-            if (!body.cedula || !body.nombreCompleto || !body.correoElectronico) {
-                alert('Cédula, nombre y correo son obligatorios.');
+            const txt = await r.text();
+            if (!r.ok) {
+                alert(`No se pudo crear el paciente.\n${txt || ''}`);
                 return;
             }
 
-            try {
-                const resp = await fetch(`${window.ApiBaseUrl}api/Paciente`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-                if (!resp.ok) {
-                    const txt = await resp.text();
-                    alert(`No se pudo crear el paciente.\n${txt || ''}`);
-                    return;
-                }
+            const data = JSON.parse(txt); // { pacienteID: n }
+            const targetSelect = form.dataset.targetSelect || '#pacienteEdit';
 
-                const data = await resp.json(); 
-                const targetSelect = form.dataset.targetSelect || '#pacienteEdit';
-
-                const text = `${body.nombreCompleto} (${body.cedula}) — ${body.correoElectronico}`;
+            const sel = dq(targetSelect);
+            if (sel) {
+                const display = `${body.nombreCompleto} (${body.cedula}) — ${body.correoElectronico}`;
                 const value = String(data.pacienteID);
-
-                const sel = document.querySelector(targetSelect);
-                if (sel) {
-                    let opt = [...sel.options].find(o => o.value === value);
-                    if (!opt) {
-                        opt = new Option(text, value);
-                        sel.add(opt);
-                    }
-                    sel.value = value;
-                    sel.dispatchEvent(new Event('change'));
+                let opt = [...sel.options].find(o => o.value === value);
+                if (!opt) {
+                    opt = new Option(display, value);
+                    sel.add(opt);
                 }
-
-                getModal('modalPaciente')?.hide();
-                document.getElementById('a_pacienteHint')?.classList.add('d-none');
-            } catch {
-                alert('Error de red al crear paciente.');
+                sel.value = value;
+                sel.dispatchEvent(new Event('change'));
             }
-        });
-    }
+
+            modal('modalPaciente')?.hide();
+            document.getElementById('a_pacienteHint')?.classList.add('d-none');
+        } catch {
+            alert('Error de red al crear paciente.');
+        }
+    });
+
+    const mo = new MutationObserver(() => {
+        if (root.querySelector('[data-partial-name="Citas"]')) {
+
+            mo.disconnect();
+        }
+    });
+    mo.observe(root, { childList: true, subtree: true });
 })();

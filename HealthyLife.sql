@@ -1201,5 +1201,115 @@ INSERT INTO Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash,
 VALUES ('7-0199-3456', 'Carmen Rojas', 'carmen.rojas@healthylife.test', 'temp', (SELECT RolID FROM Roles WHERE NombreRol='Usuario'), 1);
 
 
+------- Fixes en pacientes y usuarios ------- 
+
+ALTER TABLE dbo.Pacientes
+ADD CONSTRAINT DF_Pacientes_FechaNacimiento
+DEFAULT ('1990-01-01') FOR FechaNacimiento;
+
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_Pacientes_UsuarioID' AND object_id = OBJECT_ID('dbo.Pacientes'))
+    CREATE UNIQUE INDEX UX_Pacientes_UsuarioID ON dbo.Pacientes(UsuarioID);
+GO
+
+CREATE OR ALTER TRIGGER dbo.trg_Usuarios_AfterInsert_AutoPaciente
+ON dbo.Usuarios
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @RolUsuario INT = (SELECT RolID FROM Roles WHERE NombreRol = 'Usuario');
+
+    INSERT INTO dbo.Pacientes (UsuarioID, NombreCompleto, CorreoElectronico, Telefono, Direccion, Genero)
+    SELECT  i.UsuarioID,
+            i.NombreCompleto,
+            i.CorreoElectronico,
+            NULL, NULL, NULL
+    FROM inserted i
+    LEFT JOIN dbo.Pacientes p ON p.UsuarioID = i.UsuarioID
+    WHERE i.RolID = @RolUsuario
+      AND p.PacienteID IS NULL;
+END
+GO
+
+
+CREATE OR ALTER PROCEDURE dbo.Paciente_Crear
+  @Cedula            VARCHAR(50),
+  @NombreCompleto    VARCHAR(100),
+  @CorreoElectronico VARCHAR(100),
+  @ContrasenaHash    VARCHAR(255) = NULL,
+  @Telefono          VARCHAR(20)  = NULL,
+  @FechaNacimiento   DATE         = NULL,
+  @Genero            VARCHAR(10)  = NULL,
+  @Direccion         VARCHAR(200) = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SET XACT_ABORT ON;
+
+  IF @FechaNacimiento IS NULL SET @FechaNacimiento = '1990-01-01';
+  IF @ContrasenaHash IS NULL SET @ContrasenaHash = 'temporal';
+
+  DECLARE @RolUsuario INT = (SELECT RolID FROM Roles WHERE NombreRol='Usuario');
+  DECLARE @UsuarioID  INT;
+  DECLARE @PacienteID INT;
+
+  BEGIN TRAN;
+
+
+    SELECT @UsuarioID = UsuarioID
+    FROM dbo.Usuarios
+    WHERE CorreoElectronico = @CorreoElectronico
+       OR Cedula = @Cedula;
+
+ 
+    IF @UsuarioID IS NULL
+    BEGIN
+      INSERT INTO dbo.Usuarios (Cedula, NombreCompleto, CorreoElectronico, ContrasenaHash, RolID, Activo)
+      VALUES (@Cedula, @NombreCompleto, @CorreoElectronico, @ContrasenaHash, @RolUsuario, 1);
+
+      SET @UsuarioID = SCOPE_IDENTITY();
+    END
+    ELSE
+    BEGIN
+      -- opcional: mantener datos alineados
+      UPDATE dbo.Usuarios
+         SET Cedula = @Cedula,
+             NombreCompleto = @NombreCompleto,
+             CorreoElectronico = @CorreoElectronico
+       WHERE UsuarioID = @UsuarioID;
+    END
+
+    -- 3) Asegurar Paciente
+    IF NOT EXISTS (SELECT 1 FROM dbo.Pacientes WHERE UsuarioID = @UsuarioID)
+    BEGIN
+      INSERT INTO dbo.Pacientes (UsuarioID, NombreCompleto, CorreoElectronico, Telefono, Direccion, Genero, FechaNacimiento)
+      VALUES (@UsuarioID, @NombreCompleto, @CorreoElectronico, @Telefono, @Direccion, @Genero, @FechaNacimiento);
+    END
+    ELSE
+    BEGIN
+      UPDATE p
+         SET p.NombreCompleto    = @NombreCompleto,
+             p.CorreoElectronico = @CorreoElectronico,
+             p.Telefono          = @Telefono,
+             p.Direccion         = @Direccion,
+             p.Genero            = @Genero,
+             p.FechaNacimiento   = @FechaNacimiento
+       FROM dbo.Pacientes p
+       WHERE p.UsuarioID = @UsuarioID;
+    END
+
+    SELECT @PacienteID = PacienteID
+    FROM dbo.Pacientes
+    WHERE UsuarioID = @UsuarioID;
+
+  COMMIT;
+
+  SELECT @PacienteID AS PacienteID;
+END
+GO
+
+
 
 

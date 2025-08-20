@@ -257,26 +257,15 @@
                 </div>
 
                 <div class="col-md-4 form-group mt-3">
-                    <select name="department" id="department" class="form-select" required>
-                        <option value="">Seleccione una especialidad</option>
-                        <option value="Medicina General">Medicina General</option>
-                        <option value="Pediatría">Pediatría</option>
-                        <option value="Cardiología">Cardiología</option>
-                        <option value="Ginecología">Ginecología</option>
-                        <option value="Ortopedia">Ortopedia</option>
-                        <option value="Dermatología">Dermatología</option>
-                    </select>
-                    <div class="invalid-feedback">Selecciona una especialidad.</div>
-                </div>
-
-                <div class="col-md-4 form-group mt-3">
-                    @await Html.PartialAsync("Partials/_SelectDoctor",
-                    (IEnumerable<Proyecto_JN_G7.Models.DoctorListItem>)(ViewBag.Doctores ?? new List<Proyecto_JN_G7.Models.DoctorListItem>()))
+                    @await Html.PartialAsync(
+                    "Partials/_SelectDoctor",
+                                        (IEnumerable<Proyecto_JN_G7.Models.DoctorListItem>)(ViewBag.Doctores ?? new List<Proyecto_JN_G7.Models.DoctorListItem>())
+                                        )
                 </div>
             </div>
 
             <div class="form-group mt-3">
-                <textarea class="form-control" name="message" rows="5"
+                <textarea class="form-control" name="message" id="message" rows="5"
                           placeholder="Motivo de la consulta / notas adicionales (opcional)"></textarea>
             </div>
 
@@ -296,7 +285,6 @@
                             <ul class="list-unstyled small mb-0">
                                 <li><i class="bi bi-person me-1"></i> <span id="apmtModalName"></span></li>
                                 <li><i class="bi bi-calendar-event me-1"></i> <span id="apmtModalDate"></span></li>
-                                <li><i class="bi bi-hospital me-1"></i> <span id="apmtModalDept"></span></li>
                                 <li><i class="bi bi-person-badge me-1"></i> <span id="apmtModalDoctor"></span></li>
                             </ul>
                         </div>
@@ -695,3 +683,100 @@
         </div>
     </section>
 
+<script>
+    (() => {
+      const form = document.getElementById('appointmentForm');
+      if (!form) return;
+
+      const API = window.ApiBaseUrl || '/';
+      
+      const APPOINTMENT_URL = `${API}api/Cita/Solicitudes`;
+
+      const el = id => document.getElementById(id);
+      const modalOk = bootstrap.Modal.getOrCreateInstance(el('appointmentSuccessModal'));
+
+      function setLoading(on) {
+        document.querySelector('#appointmentForm .loading')?.classList.toggle('d-none', !on);
+        document.querySelector('#appointmentForm .error-message')?.classList.toggle('d-none', true);
+        document.querySelector('#appointmentForm .sent-message')?.classList.toggle('d-none', true);
+      }
+      function showError(msg) {
+        const box = document.querySelector('#appointmentForm .error-message');
+        if (box) { box.textContent = msg || 'Ocurrió un error. Intenta más tarde.'; box.classList.remove('d-none'); }
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Campos
+        const name  = el('name')?.value.trim()  || '';
+        const email = el('email')?.value.trim() || '';
+        const phone = el('phone')?.value.trim() || '';
+        const date  = el('date')?.value.trim()  || '';
+        const msg   = el('message')?.value.trim() || '';
+
+        // Doctor (desde el parcial _SelectDoctor -> id="doctor")
+        const doctorSel = el('doctor');
+        const doctorVal = (doctorSel?.value || '').trim();
+        const doctorTxt = doctorSel?.options[doctorSel.selectedIndex]?.text?.trim() || '';
+
+        // Validación HTML5 + chequeos mínimos
+        form.classList.add('was-validated');
+        if (!form.checkValidity()) return;
+        if (!doctorVal) { showError('Seleccione un médico.'); return; }
+
+        setLoading(true);
+
+        try {
+          
+          const doctorID = /^\d+$/.test(doctorVal) ? parseInt(doctorVal, 10) : null;
+
+          const resp = await fetch(APPOINTMENT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              
+              Nombre: name,
+              Correo: email,
+              Telefono: phone,
+              FechaHora: date,              // "YYYY-MM-DDTHH:mm"
+              DoctorPreferidoID: doctorID,  // opcional, si tu API lo acepta
+              DoctorPreferido: doctorTxt,   // texto visible "Nombre (Especialidad)"
+              Motivo: msg
+            })
+          });
+
+          const raw = await resp.text();
+          if (!resp.ok) {
+          
+            try {
+              const j = JSON.parse(raw || '{}');
+              showError(j.mensaje || j.Mensaje || raw || 'No se pudo enviar la solicitud.');
+            } catch {
+              showError(raw || 'No se pudo enviar la solicitud.');
+            }
+            return;
+          }
+
+          // Llenamos el modal de éxito
+          el('apmtModalName').textContent  = name;
+          el('apmtModalDate').textContent  = date ? new Date(date).toLocaleString() : '';
+          el('apmtModalDoctor').textContent = doctorTxt;
+
+          // Reset UI
+          form.reset();
+          form.classList.remove('was-validated');
+          setLoading(false);
+
+          // Abrir modal
+          modalOk.show();
+
+        } catch (err) {
+          console.error(err);
+          showError('Ocurrió un error de red. Intenta más tarde.');
+        } finally {
+          setLoading(false);
+        }
+      });
+    })();
+</script>
