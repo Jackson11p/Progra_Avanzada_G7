@@ -34,7 +34,7 @@ namespace Proyecto_JN_G7.Controllers
 
                 if (resultado.IsSuccessStatusCode)
                 {
-                    return RedirectToAction("Index", "Home");
+                    return RedirectToAction("Doctores", "Admin");
                 }
                 else
                 {

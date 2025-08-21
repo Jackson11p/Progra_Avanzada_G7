@@ -94,12 +94,13 @@ CREATE TABLE CitaTratamientos (
 --Tabla: Facturacion
 CREATE TABLE Facturas (
     FacturaID INT PRIMARY KEY IDENTITY(1,1),
-    PacienteID INT NOT NULL,
+    CitaID INT NOT NULL,
     FechaEmision DATETIME DEFAULT GETDATE(),
     Total DECIMAL(10,2) NOT NULL,
     EstadoPago VARCHAR(20) DEFAULT 'Pendiente', -- Pagado, Pendiente, Cancelado
-    FOREIGN KEY (PacienteID) REFERENCES Pacientes(PacienteID)
+    FOREIGN KEY (CitaID) REFERENCES Citas(CitaID)
 );
+
 --Tabla:DetallesFactura
 CREATE TABLE FacturaDetalles (
     DetalleID INT PRIMARY KEY IDENTITY(1,1),
@@ -160,6 +161,8 @@ ALTER TABLE Pacientes
   ADD CONSTRAINT FK_Pacientes_Usuarios
   FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID);
 
+ALTER TABLE dbo.Pacientes ADD NombreCompleto VARCHAR(100) NULL;
+ALTER TABLE dbo.Pacientes ADD Cedula VARCHAR(50) NULL;
 
 -- Procedimeintos --
 
@@ -1308,7 +1311,52 @@ BEGIN
 
   SELECT @PacienteID AS PacienteID;
 END
+
+--Consultar Facturas
 GO
+CREATE OR ALTER PROCEDURE [dbo].[ConsultarFacturas]
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        FacturaID,
+        CitaID,
+        FechaEmision,
+        Total,
+        EstadoPago
+    FROM Facturas;
+END;
+GO
+
+--Triggers:
+
+-- Trigger para generar factura cuando una cita se completa
+GO
+CREATE OR ALTER TRIGGER Cita_Completada
+ON Citas
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    INSERT INTO Facturas (CitaID, Total, EstadoPago)
+    SELECT i.CitaID, 60000, 'Cancelado'
+    FROM inserted i
+    INNER JOIN deleted d ON i.CitaID = d.CitaID
+    WHERE i.Estado = 'Completada' AND d.Estado <> 'Completada'
+          AND NOT EXISTS (SELECT 1 FROM Facturas f WHERE f.CitaID = i.CitaID);
+   
+    UPDATE f
+    SET f.Total = 60000,
+        f.EstadoPago = 'Cancelado'
+    FROM Facturas f
+    INNER JOIN inserted i ON f.CitaID = i.CitaID
+    INNER JOIN deleted d ON i.CitaID = d.CitaID
+    WHERE i.Estado = 'Completada' AND d.Estado <> 'Completada';
+END;
+GO
+
 
 
 
