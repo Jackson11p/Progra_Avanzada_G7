@@ -23,16 +23,14 @@ public class FacturasController : ControllerBase
     }
 
     [HttpGet]
-    [Route("ConsultarFactura")]
-    public IActionResult ConsultarFactura(int facturaId)
+    [Route("ConsultarFacturas")]
+    public IActionResult ConsultarFactura()
     {
-        using var connection = new SqlConnection(_configuration.GetConnectionString("Connection"));
-        var resultado = connection.Query<Factura>("ConsultarFactura", new { FacturaID = facturaId }, commandType: CommandType.StoredProcedure);
-
-        if (resultado != null && resultado.Any())
-            return Ok(_utilitarios.RespuestaCorrecta(resultado));
-        else
-            return NotFound(_utilitarios.RespuestaIncorrecta("Factura no encontrada."));
+        using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+        var data = conn.Query<Factura>(
+            "ConsultarFacturas",
+            commandType: CommandType.StoredProcedure);
+        return Ok(data);
     }
 
     [HttpPost]
