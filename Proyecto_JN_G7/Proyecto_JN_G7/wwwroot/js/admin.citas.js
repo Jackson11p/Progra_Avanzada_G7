@@ -9,7 +9,7 @@
 
     const API = window.ApiBaseUrl;
 
-    // Helpers básicos
+    // Helpers
     const dq = (s) => document.querySelector(s);
     const val = (s) => (dq(s)?.value ?? '').trim();
     const set = (s, v) => { const el = dq(s); if (el) el.value = v ?? ''; };
@@ -22,7 +22,6 @@
         if (a) a.click();
     };
 
-    // Lee un <select> y devuelve el entero del doctor (value o data-id)
     function getSelectedInt(sel) {
         const el = dq(sel);
         if (!el) return 0;
@@ -86,43 +85,62 @@
             MotivoConsulta: val('#motivo') || ''
         };
 
-        if (!body.PacienteID) return alert('Seleccione un paciente.');
-        if (!body.DoctorID) return alert('Seleccione un doctor.');
-        if (!body.FechaHora) return alert('Seleccione fecha y hora.');
+        if (!body.PacienteID) return toastMsg('Seleccione un paciente.', false);
+        if (!body.DoctorID) return toastMsg('Seleccione un doctor.', false);
+        if (!body.FechaHora) return toastMsg('Seleccione fecha y hora.', false);
 
         const url = id ? `${API}api/Cita/${id}` : `${API}api/Cita`;
         const method = id ? 'PUT' : 'POST';
 
-        const resp = await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
+        try {
+            const resp = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
 
-        if (!resp.ok) {
-            const txt = await resp.text();
-            alert(`No se pudo guardar la cita.\n${txt || ''}`);
-            return;
+            if (!resp.ok) {
+                const txt = await resp.text();
+                toastMsg(txt || 'No se pudo guardar la cita.', false);
+                return;
+            }
+
+            modal('modalCita')?.hide();
+            toastMsg(id ? 'Cita actualizada.' : 'Cita creada.');
+            reloadCitas();
+        } catch (err) {
+            console.error(err);
+            toastMsg('Error de red al guardar la cita.', false);
         }
-
-        modal('modalCita')?.hide();
-        reloadCitas();
     });
 
     // ---------- ELIMINAR CITA ----------
     root.addEventListener('click', async (e) => {
         const btn = e.target.closest('[data-action="delete-cita"]');
         if (!btn) return;
-        if (!confirm('¿Eliminar esta cita?')) return;
 
-        const id = btn.dataset.citaId;
-        const resp = await fetch(`${API}api/Cita/${id}`, { method: 'DELETE' });
+        const ok = await confirmNice({
+            title: 'Eliminar cita',
+            message: '¿Desea eliminar esta cita?',
+            okText: 'Sí, eliminar',
+            okClass: 'btn-danger'
+        });
+        if (!ok) return;
 
-        if (!resp.ok) {
-            alert('No se pudo eliminar la cita.');
-            return;
+        try {
+            const id = btn.dataset.citaId;
+            const resp = await fetch(`${API}api/Cita/${id}`, { method: 'DELETE' });
+            if (!resp.ok) {
+                const txt = await resp.text();
+                toastMsg(txt || 'No se pudo eliminar la cita.', false);
+                return;
+            }
+            toastMsg('Cita eliminada.');
+            reloadCitas();
+        } catch (err) {
+            console.error(err);
+            toastMsg('Error de red al eliminar la cita.', false);
         }
-        reloadCitas();
     });
 
     // ---------- ATENDER SOLICITUD ----------
@@ -137,7 +155,6 @@
         set('#a_pacienteSelect', '');
         document.getElementById('a_pacienteHint')?.classList.add('d-none');
 
-        // Buscar paciente por email
         const email = btn.dataset.email || '';
         if (email) {
             try {
@@ -150,7 +167,6 @@
                 }
             } catch { /* no-op */ }
         }
-
 
         const fp = document.getElementById('formPaciente');
         if (fp) fp.dataset.targetSelect = '#a_pacienteSelect';
@@ -175,43 +191,63 @@
             MotivoConsulta: val('#a_motivo')
         };
 
-        if (!body.PacienteID) return alert('Seleccione un paciente.');
-        if (!body.DoctorID) return alert('Seleccione un doctor.');
-        if (!body.FechaHora) return alert('Seleccione fecha y hora.');
+        if (!body.PacienteID) return toastMsg('Seleccione un paciente.', false);
+        if (!body.DoctorID) return toastMsg('Seleccione un doctor.', false);
+        if (!body.FechaHora) return toastMsg('Seleccione fecha y hora.', false);
 
-        const resp = await fetch(`${API}api/Cita/Solicitudes/${sid}/Atender`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
+        try {
+            const resp = await fetch(`${API}api/Cita/Solicitudes/${sid}/Atender`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
 
-        if (!resp.ok) {
-            const txt = await resp.text();
-            alert(`No se pudo atender la solicitud.\n${txt || ''}`);
-            return;
+            if (!resp.ok) {
+                const txt = await resp.text();
+                toastMsg(txt || 'No se pudo atender la solicitud.', false);
+                return;
+            }
+
+            modal('modalAtender')?.hide();
+            toastMsg('Solicitud atendida y convertida en cita.');
+            reloadCitas();
+        } catch (err) {
+            console.error(err);
+            toastMsg('Error de red al atender la solicitud.', false);
         }
-
-        modal('modalAtender')?.hide();
-        reloadCitas();
     });
 
     // ---------- DESCARTAR SOLICITUD ----------
     root.addEventListener('click', async (e) => {
         const btn = e.target.closest('[data-action="delete-solicitud"]');
         if (!btn) return;
-        if (!confirm('¿Descartar esta solicitud?')) return;
 
-        const sid = btn.dataset.solicitudId;
-        const resp = await fetch(`${API}api/Cita/Solicitudes/${sid}`, { method: 'DELETE' });
+        const ok = await confirmNice({
+            title: 'Descartar solicitud',
+            message: '¿Seguro que deseas descartar esta solicitud?',
+            okText: 'Sí, descartar',
+            okClass: 'btn-warning'
+        });
+        if (!ok) return;
 
-        if (!resp.ok) {
-            alert('No se pudo descartar la solicitud.');
-            return;
+        try {
+            const sid = btn.dataset.solicitudId;
+            const resp = await fetch(`${API}api/Cita/Solicitudes/${sid}`, { method: 'DELETE' });
+
+            if (!resp.ok) {
+                const txt = await resp.text();
+                toastMsg(txt || 'No se pudo descartar la solicitud.', false);
+                return;
+            }
+            toastMsg('Solicitud descartada.');
+            reloadCitas();
+        } catch (err) {
+            console.error(err);
+            toastMsg('Error de red al descartar la solicitud.', false);
         }
-        reloadCitas();
     });
 
-    // ---------- CREAR PACIENTE  ----------
+    // ---------- CREAR PACIENTE (modal rápido) ----------
     root.addEventListener('click', (e) => {
         const btn = e.target.closest('[data-action="open-new-paciente"]');
         if (!btn) return;
@@ -241,7 +277,7 @@
         };
 
         if (!body.cedula || !body.nombreCompleto || !body.correoElectronico) {
-            alert('Cédula, nombre y correo son obligatorios.');
+            toastMsg('Cédula, nombre y correo son obligatorios.', false);
             return;
         }
 
@@ -254,7 +290,7 @@
 
             const txt = await r.text();
             if (!r.ok) {
-                alert(`No se pudo crear el paciente.\n${txt || ''}`);
+                toastMsg(txt || 'No se pudo crear el paciente.', false);
                 return;
             }
 
@@ -276,16 +312,55 @@
 
             modal('modalPaciente')?.hide();
             document.getElementById('a_pacienteHint')?.classList.add('d-none');
+            toastMsg('Paciente creado.');
         } catch {
-            alert('Error de red al crear paciente.');
+            toastMsg('Error de red al crear paciente.', false);
         }
     });
 
     const mo = new MutationObserver(() => {
         if (root.querySelector('[data-partial-name="Citas"]')) {
-
             mo.disconnect();
         }
     });
     mo.observe(root, { childList: true, subtree: true });
+
+    async function confirmNice({
+        title = "Confirmar",
+        message = "¿Seguro?",
+        okText = "Sí, continuar",
+        okClass = "btn-danger"
+    } = {}) {
+        return new Promise(resolve => {
+            const el = document.getElementById('confirmModal');
+            const m = bootstrap.Modal.getOrCreateInstance(el);
+
+            document.getElementById('cfTitle').textContent = title;
+            document.getElementById('cfMessage').textContent = message;
+            document.getElementById('cfOkText').textContent = okText;
+
+            const okBtn = document.getElementById('cfOk');
+            okBtn.className = `btn ${okClass}`;
+
+            const onOk = () => { cleanup(); m.hide(); resolve(true); };
+            const onCancel = () => { cleanup(); resolve(false); };
+
+            function cleanup() {
+                okBtn.removeEventListener('click', onOk);
+                el.removeEventListener('hidden.bs.modal', onCancel);
+            }
+
+            okBtn.addEventListener('click', onOk);
+            el.addEventListener('hidden.bs.modal', onCancel, { once: true });
+            m.show();
+        });
+    }
+
+    function toastMsg(message, success = true) {
+        const t = document.getElementById('liveToast');
+        t.classList.toggle('text-bg-success', success);
+        t.classList.toggle('text-bg-danger', !success);
+        document.getElementById('toastBody').textContent = message;
+        bootstrap.Toast.getOrCreateInstance(t, { delay: 2500 }).show();
+    }
 })();

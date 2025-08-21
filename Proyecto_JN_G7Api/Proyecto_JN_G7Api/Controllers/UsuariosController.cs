@@ -58,6 +58,25 @@ namespace Proyecto_JN_G7Api.Controllers
                 : BadRequest(_utilitarios.RespuestaIncorrecta("Su información no fue actualizada"));
         }
 
+        [HttpPut("ActualizarContrasenna")]
+        public IActionResult ActualizarContrasenna(Autenticacion model)
+        {
+            using var context = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var filas = context.Execute(
+                "ActualizarContrasenna",
+                new
+                {
+                    model.UsuarioID,
+                    model.ContrasenaHash
+                },
+                commandType: CommandType.StoredProcedure
+            );
+
+            return filas > 0
+                ? Ok(_utilitarios.RespuestaCorrecta(null))
+                : BadRequest(_utilitarios.RespuestaIncorrecta("Su información no fue actualizada"));
+        }
+
         [HttpGet("ConsultarUsuariosDropdown")]
         public IActionResult ConsultarUsuariosDropdown()
         {

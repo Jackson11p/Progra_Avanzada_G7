@@ -7,9 +7,12 @@
         <h2>Actualizar Perfil</h2>
         <p>Modifica tus datos personales para mantener tu información actualizada.</p>
     </div>
-
     <div class="container" data-aos="fade-up" data-aos-delay="100">
-        <form asp-controller="Usuarios" asp-action="ActualizarPerfilUsuario" method="post" @* class="php-email-form" *@>
+        <form asp-controller="Usuarios" asp-action="ActualizarPerfilUsuario" method="post">
+            @if (ViewBag.Mensaje != null)
+            {
+                <div class="alert alert-danger mt-2">@ViewBag.Mensaje</div>
+            }
             <div class="row">
                 <div class="col-md-6 form-group">
                     <label for="Cedula">Cédula</label>
