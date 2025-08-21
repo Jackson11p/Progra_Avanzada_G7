@@ -1324,7 +1324,28 @@ BEGIN
     FROM Facturas;
 END;
 GO
-
+CREATE OR ALTER PROCEDURE [dbo].[ConsultarFacturas]
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT 
+        f.FacturaID,
+        p.NombreCompleto AS Paciente,
+        d.UsuarioID AS DoctorID,
+        u.NombreCompleto AS Doctor,
+        c.FechaHora,
+        c.MotivoConsulta,
+        f.FechaEmision,
+        f.Total,
+        f.EstadoPago
+    FROM Facturas f
+    INNER JOIN Citas c ON f.CitaID = c.CitaID
+    INNER JOIN Pacientes p ON c.PacienteID = p.PacienteID
+    INNER JOIN Doctores d ON c.DoctorID = d.DoctorID
+    INNER JOIN Usuarios u ON d.UsuarioID = u.UsuarioID
+    ORDER BY f.FechaEmision DESC;
+END;
+GO
 --Triggers:
 
 -- Trigger para generar factura cuando una cita se completa
