@@ -4,15 +4,15 @@ GO
 
 USE HealthyLifeDB;
 GO
-
 -- Tabla: Roles de usuario
 CREATE TABLE Roles (
     RolID INT PRIMARY KEY IDENTITY(1,1),
     NombreRol VARCHAR(50) NOT NULL
 );
 
-SELECT * FROM Usuarios
-
+select * from Usuarios
+DELETE FROM doctores
+where DoctorID = 11
 -- Inserts Roles --
 INSERT INTO Roles (NombreRol) VALUES ('Usuario');
 GO
@@ -41,7 +41,6 @@ CREATE TABLE Doctores (
     CedulaProfesional VARCHAR(20) UNIQUE NOT NULL,
     FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID)
 );
-
 -- Tabla: Pacientes
 CREATE TABLE Pacientes (
     PacienteID INT PRIMARY KEY IDENTITY(1,1),
@@ -74,23 +73,6 @@ CREATE TABLE Diagnosticos (
     Descripcion TEXT NOT NULL,
     FechaRegistro DATETIME NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (CitaID) REFERENCES Citas(CitaID)
-);
-
--- Tabla: Tratamientos aplicados
-CREATE TABLE Tratamientos (
-    TratamientoID INT PRIMARY KEY IDENTITY(1,1),
-    NombreTratamiento VARCHAR(100) NOT NULL,
-    Descripcion TEXT,
-    Costo DECIMAL(10,2)
-);
-
--- Tabla intermedia: Cita-Tratamiento (N:M)
-CREATE TABLE CitaTratamientos (
-    CitaID INT NOT NULL,
-    TratamientoID INT NOT NULL,
-    PRIMARY KEY (CitaID, TratamientoID),
-    FOREIGN KEY (CitaID) REFERENCES Citas(CitaID),
-    FOREIGN KEY (TratamientoID) REFERENCES Tratamientos(TratamientoID)
 );
 
 --Tabla: Facturacion
@@ -288,7 +270,6 @@ BEGIN
 	
 END;
 GO	
-SELECT * FROM USUARIOS
 
 -- ConsultarUsuario --
 GO
@@ -310,6 +291,7 @@ BEGIN
 	
 END
 
+EXEC ConsultarUsuario 22
 
 -- ConsultarUsuario --
 GO
@@ -434,7 +416,7 @@ END
 
 --Registra un doctor
 GO
-CREATE OR ALTER   PROCEDURE [dbo].[RegistrarDcotor]
+CREATE OR ALTER   PROCEDURE RegistrarDoctor
     @UsuarioID int,
     @Especialidad VARCHAR(100),
     @CedulaProfesional VARCHAR(20)    
@@ -1322,6 +1304,20 @@ BEGIN
   COMMIT;
 
   SELECT @PacienteID AS PacienteID;
+END
+GO
+
+CREATE PROCEDURE CargarUsuarios
+AS
+BEGIN
+    SELECT 
+        UsuarioID,
+        NombreCompleto,
+        Cedula,
+        CorreoElectronico
+    FROM Usuarios
+	WHERE RolID = 1
+    ORDER BY NombreCompleto;
 END
 GO
 

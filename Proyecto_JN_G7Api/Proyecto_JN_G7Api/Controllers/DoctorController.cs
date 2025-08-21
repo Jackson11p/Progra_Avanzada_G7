@@ -92,5 +92,18 @@ namespace Proyecto_JN_G7Api.Controllers
             else
                 return StatusCode(500, new { mensaje = "No se pudo actualizar el doctor" });
         }
+
+        [HttpGet("CargarUsuarios")]
+        public IActionResult CargarUsuarios()
+        {
+            using var context = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var usuarios = context.Query<UsuarioDropdown>(
+                "CargarUsuarios",
+                commandType: CommandType.StoredProcedure
+            ).ToList();
+
+            return Ok(usuarios);
+        }
+
     }
 }
