@@ -4,9 +4,9 @@
     public class Factura
     {
         public int FacturaID { get; set; }
-        public long PacienteID { get; set; }   
-        public DateTime Fecha { get; set; }
+        public int CitaID { get; set; }
+        public DateTime FechaEmision { get; set; }
         public decimal Total { get; set; }
-        public Autenticacion? Paciente { get; set; }
+        public string EstadoPago { get; set; } = "Pendiente";
     }
 }

@@ -32,10 +32,17 @@ namespace Proyecto_JN_G7.Controllers
             var data = await client.GetFromJsonAsync<List<DoctorListItem>>("api/Doctor/ConsultarDoctor");
             return PartialView("Partials/_Doctores", data ?? new());
         }
-        
+
+        //consultar las facturas
+        public async Task<IActionResult> Facturas()
+        {
+            var client = _http.CreateClient("Api");
+            var data = await client.GetFromJsonAsync<List<Factura>>("api/Facturas/ConsultarFacturas");
+            return PartialView("Partials/_Facturas", data ?? new());
+        }
+
         public IActionResult Pacientes() => PartialView("Partials/_Pacientes");
-        public IActionResult HistorialMedico() => PartialView("Partials/_HistorialMedico");
-        public IActionResult Facturas() => PartialView("Partials/_Facturas");
+        public IActionResult HistorialMedico() => PartialView("Partials/_HistorialMedico");        
         public IActionResult Usuarios() => PartialView("Partials/_Usuarios");
     }
 }

@@ -24,7 +24,7 @@ public class FacturasController : ControllerBase
 
     [HttpGet]
     [Route("ConsultarFacturas")]
-    public IActionResult ConsultarFactura()
+    public IActionResult ConsultarFacturas()
     {
         using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
         var data = conn.Query<Factura>(
