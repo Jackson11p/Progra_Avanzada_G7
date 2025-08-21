@@ -11,6 +11,8 @@ CREATE TABLE Roles (
     NombreRol VARCHAR(50) NOT NULL
 );
 
+SELECT * FROM Usuarios
+
 -- Inserts Roles --
 INSERT INTO Roles (NombreRol) VALUES ('Usuario');
 GO
@@ -100,6 +102,7 @@ CREATE TABLE Facturas (
     EstadoPago VARCHAR(20) DEFAULT 'Pendiente', -- Pagado, Pendiente, Cancelado
     FOREIGN KEY (PacienteID) REFERENCES Pacientes(PacienteID)
 );
+
 --Tabla:DetallesFactura
 CREATE TABLE FacturaDetalles (
     DetalleID INT PRIMARY KEY IDENTITY(1,1),
@@ -272,7 +275,20 @@ BEGIN
 
 	END
 
-END
+END 
+
+CREATE OR ALTER PROCEDURE ActualizarContrasenna
+	@IdUsuario bigint,
+	@ContrasenaHash varchar(255)
+AS
+BEGIN
+	UPDATE	Usuarios
+		SET	ContrasenaHash = @ContrasenaHash
+		WHERE IdUsuario = @IdUsuario
+	
+END;
+GO	
+SELECT * FROM USUARIOS
 
 -- ConsultarUsuario --
 GO
@@ -349,6 +365,7 @@ END
 
 -- RegistrarError --
 GO
+
 CREATE OR ALTER PROCEDURE RegistrarError
     @UsuarioID    BIGINT         = NULL,
     @Origen       NVARCHAR(200),
@@ -403,7 +420,6 @@ BEGIN
     INSERT INTO Facturas (CitaID, Total, EstadoPago, FechaEmision)
     VALUES (@CitaID, @Total, @EstadoPago, GETDATE())
 END
-
 GO
 CREATE OR ALTER PROCEDURE ConsultarFactura
     @FacturaID INT
@@ -452,7 +468,6 @@ BEGIN
         VALUES (@PacienteID, @DoctorID, @FechaHora, @Estado, @MotivoConsulta, @FechaCreacion);
     END
 END
-
 
 --Registra un paciente--
 GO

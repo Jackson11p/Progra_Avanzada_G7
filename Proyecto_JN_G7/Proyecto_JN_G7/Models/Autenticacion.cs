@@ -7,6 +7,7 @@
         public string? NombreCompleto { get; set; }
         public string? CorreoElectronico { get; set; }
         public string? ContrasenaHash { get; set; }
+        public string? ConfirmarContrasenna { get; set; }
         public int RolID { get; set; }
         public string? NombreRol { get; set; }
     }
