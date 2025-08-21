@@ -138,9 +138,9 @@ namespace Proyecto_JN_G7Api.Controllers
             using (var context = new SqlConnection(_configuration.GetSection("ConnectionStrings:Connection").Value))
             {
                 var resultado = context.Query<CitasPorUsuarioUnificada>("CitasPorUsuarioUnificada",
-                    new 
-                    { 
-                        UsuarioID 
+                    new
+                    {
+                        UsuarioID
                     },
                 commandType: CommandType.StoredProcedure);
 
@@ -155,6 +155,7 @@ namespace Proyecto_JN_G7Api.Controllers
                 }
             }
         }
+           
 
         [HttpPut("{id:int}")]
         public IActionResult Actualizar(int id, [FromBody] Models.Cita model)

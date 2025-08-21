@@ -9,7 +9,9 @@ CREATE TABLE Roles (
     RolID INT PRIMARY KEY IDENTITY(1,1),
     NombreRol VARCHAR(50) NOT NULL
 );
-
+UPDATE Usuarios
+SET RolID = 2
+WHERE UsuarioID = 27
 select * from Usuarios
 DELETE FROM doctores
 where DoctorID = 11
@@ -65,7 +67,7 @@ CREATE TABLE Citas (
     FOREIGN KEY (DoctorID) REFERENCES Doctores(DoctorID),
     CONSTRAINT UC_Cita_Unica UNIQUE (DoctorID, FechaHora)
 );
-
+SELECT * FROM CITAS
 -- Tabla: Diagn sticos m dicos
 CREATE TABLE Diagnosticos (
     DiagnosticoID INT PRIMARY KEY IDENTITY(1,1),
@@ -1095,6 +1097,30 @@ END
 
 EXEC CitasPorUsuarioUnificada @UsuarioID = 4;
 
+CREATE OR ALTER PROCEDURE ConsultarCitasDoctor
+    @UsuarioID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        c.CitaID,
+        c.FechaHora,
+        c.Estado,
+        c.MotivoConsulta,
+        c.FechaCreacion,
+        p.PacienteID,
+        p.NombreCompleto AS NombrePaciente,
+        d.DoctorID,
+        u.NombreCompleto AS NombreDoctor
+    FROM Citas c
+    INNER JOIN Pacientes p ON p.PacienteID = c.PacienteID
+    LEFT JOIN Doctores d ON d.DoctorID = c.DoctorID
+    LEFT JOIN Usuarios u ON u.UsuarioID = d.UsuarioID
+    WHERE p.UsuarioID = @UsuarioID
+    ORDER BY c.FechaHora DESC;
+END
+
 -- Paciente_Actualizar --
 GO
 CREATE OR ALTER PROCEDURE dbo.Paciente_Actualizar
@@ -1346,6 +1372,8 @@ BEGIN
     ORDER BY f.FechaEmision DESC;
 END;
 GO
+
+SELECT * FROM CITAS
 --Triggers:
 
 -- Trigger para generar factura cuando una cita se completa
