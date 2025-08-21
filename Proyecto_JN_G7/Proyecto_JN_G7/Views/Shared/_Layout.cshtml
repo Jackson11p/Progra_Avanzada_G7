@@ -63,7 +63,7 @@
                         <li><a href="#services">Servicios</a></li>
                         <li><a href="#doctors">Doctores</a></li>
                         <li><a href="#contact">Contacto</a></li>
-                        <li><a href="@Url.Action("ConsultarCitasUsuario", "Cita")">Historial Citas</a></li>
+                        <li><a href="@Url.Action("ConsultarCitasUsuario", "Cita")">Historial Citas</a></li> 
                     </ul>
                     <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
                 </nav>
@@ -80,7 +80,8 @@
                         </a>
                         <ul class="dropdown-menu" style="min-width: 90%;">
                             <li><a class="dropdown-item" asp-controller="Usuarios" asp-action="ActualizarPerfilUsuario">Perfil</a></li>
-                            <li><a class="dropdown-item" asp-controller="Account" asp-action="Logout">Cerrar sesión</a></li>
+                            <li><a class="dropdown-item" asp-controller="Usuarios" asp-action="ActualizarContrasenna">Seguridad</a></li>
+                            <li><a class="dropdown-item" asp-controller="Account" asp-action="Logout">Cerrar sesión</a></li> 
                         </ul>
                     </div>
                 }
@@ -110,13 +111,13 @@
     <script>
         window.ApiBaseUrl = '@Configuration["Start:ApiUrl"]';
     </script>
-    <script src="~/js/validate.js" defer asp-append-version="true"></script>
+    @* <script src="~/js/validate.js" defer asp-append-version="true"></script> *@
     <script src="~/js/aos.js"></script>
     <script src="~/js/glightbox.min.js"></script>
     <script src="~/js/purecounter_vanilla.js"></script>
     <script src="~/js/swiper-bundle.min.js"></script>
     <script src="~/js/main.js"></script>
-    <script src="~/js/appointment.js" defer asp-append-version="true"></script>
+@*     <script src="~/js/appointment.js" defer asp-append-version="true"></script> *@
     
     @await RenderSectionAsync("Scripts", required: false)
 </body>
