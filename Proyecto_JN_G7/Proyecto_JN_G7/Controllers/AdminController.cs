@@ -7,7 +7,11 @@ namespace Proyecto_JN_G7.Controllers
     public class AdminController : Controller
     {
         private readonly IHttpClientFactory _http;
-        public AdminController(IHttpClientFactory http) => _http = http;
+        private readonly IConfiguration _cfg;
+        public AdminController(IConfiguration cfg, IHttpClientFactory http)
+        {
+            _cfg = cfg; _http = http;
+        }
         public IActionResult Index() => View();
 
         public async Task<IActionResult> Citas()
@@ -41,8 +45,25 @@ namespace Proyecto_JN_G7.Controllers
             return PartialView("Partials/_Facturas", data ?? new());
         }
 
-        public IActionResult Pacientes() => PartialView("Partials/_Pacientes");
-        public IActionResult HistorialMedico() => PartialView("Partials/_HistorialMedico");        
+        public async Task<IActionResult> HistorialMedico()
+        {
+            var api = _cfg["ApiBaseUrl"] ?? "/";
+            var cli = _http.CreateClient();
+
+            var lista = new List<PacienteListItem>();
+            try
+            {
+                var resp = await cli.GetAsync($"{api}api/Paciente/ListaSimple");
+                if (resp.IsSuccessStatusCode)
+                    lista = await resp.Content.ReadFromJsonAsync<List<PacienteListItem>>() ?? new();
+            }
+            catch { }
+
+            ViewBag.Pacientes = lista;
+            return PartialView("Partials/_HistorialMedico");
+        }
+
+        public IActionResult Pacientes() => PartialView("Partials/_Pacientes");    
         public IActionResult Usuarios() => PartialView("Partials/_Usuarios");
     }
 }

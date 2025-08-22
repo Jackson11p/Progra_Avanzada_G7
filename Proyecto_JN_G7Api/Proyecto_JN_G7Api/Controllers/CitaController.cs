@@ -9,6 +9,8 @@ using System;
 using System.Data;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Proyecto_JN_G7Api.Controllers
 {
@@ -18,12 +20,23 @@ namespace Proyecto_JN_G7Api.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly IHostEnvironment _environment;
+        private readonly IWebHostEnvironment _env;
         private readonly IUtilitarios _utilitarios;
-        public CitaController(IConfiguration configuration, IHostEnvironment environment, IUtilitarios utilitarios)
+        public CitaController(IConfiguration configuration, IHostEnvironment environment, IWebHostEnvironment env, IUtilitarios utilitarios)
         {
             _configuration = configuration;
             _environment = environment;
             _utilitarios = utilitarios;
+            _env = env;
+        }
+
+        private string GetWebRootPath()
+        {
+            var wwwroot = _env.WebRootPath;
+            if (string.IsNullOrEmpty(wwwroot))
+                wwwroot = Path.Combine(_env.ContentRootPath, "wwwroot");
+            Directory.CreateDirectory(wwwroot);
+            return wwwroot;
         }
 
         //Registra un paciente
@@ -207,6 +220,133 @@ namespace Proyecto_JN_G7Api.Controllers
             var afectados = conn.QuerySingle<int>("CitaPublica_Eliminar", new { SolicitudID = solicitudId }, commandType: CommandType.StoredProcedure);
             if (afectados == 0) return NotFound("No existe la solicitud.");
             return NoContent();
+        }
+
+        [HttpGet("Historial/{pacienteId:int}")]
+        public IActionResult HistorialPorPaciente(int pacienteId)
+        {
+            if (pacienteId <= 0)
+                return BadRequest(_utilitarios.RespuestaIncorrecta("Paciente inválido."));
+
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            try
+            {
+                var lista = conn.Query<CitaHistorialItem>(
+                    "Cita_HistorialPorPaciente",
+                    new { PacienteID = pacienteId },
+                    commandType: CommandType.StoredProcedure
+                ).AsList();
+
+         
+                return Ok(lista);
+            }
+            catch (SqlException ex)
+            {
+                return StatusCode(500, _utilitarios.RespuestaIncorrecta(ex.Message));
+            }
+        }
+
+
+        [HttpGet("{citaId:int}/Adjuntos")]
+        public IActionResult ListarAdjuntos(int citaId)
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var lista = conn.Query<CitaAdjuntoItem>("CitaAdjunto_ListarPorCita",
+                new { CitaID = citaId }, commandType: CommandType.StoredProcedure).ToList();
+
+            return Ok(_utilitarios.RespuestaCorrecta(lista));
+        }
+
+
+        [HttpPost("{citaId:int}/Adjuntos")]
+        [RequestSizeLimit(50_000_000)]
+        public async Task<IActionResult> SubirAdjunto(int citaId, IFormFile? file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(_utilitarios.RespuestaIncorrecta("Debe adjuntar un archivo."));
+
+            var wwwroot = GetWebRootPath();
+            var folder = Path.Combine(wwwroot, "uploads", "citas", citaId.ToString());
+            Directory.CreateDirectory(folder);
+
+            var safeName = SanitizeFileName(file.FileName);
+            var uniqueName = $"{Guid.NewGuid():N}_{safeName}";
+            var fullPath = Path.Combine(folder, uniqueName);
+
+            await using (var fs = System.IO.File.Create(fullPath))
+                await file.CopyToAsync(fs);
+
+            var relPath = Path.Combine("uploads", "citas", citaId.ToString(), uniqueName).Replace('\\', '/');
+
+            int adjuntoId;
+            using (var conn = new SqlConnection(_configuration.GetConnectionString("Connection")))
+            {
+                adjuntoId = conn.QuerySingle<int>("CitaAdjunto_Insertar", new
+                {
+                    CitaID = citaId,
+                    NombreArchivo = safeName,
+                    RutaRelativa = relPath,
+                    ContentType = file.ContentType ?? "application/octet-stream",
+                    SizeBytes = (long?)file.Length,
+                    SubidoPorUsuarioID = (int?)null  
+                }, commandType: CommandType.StoredProcedure);
+            }
+
+            var url = $"{Request.Scheme}://{Request.Host}/{relPath}";
+            return Ok(_utilitarios.RespuestaCorrecta(new
+            {
+                AdjuntoID = adjuntoId,
+                NombreArchivo = safeName,
+                RutaRelativa = relPath,
+                Url = url,
+                ContentType = file.ContentType ?? "application/octet-stream",
+                SizeBytes = file.Length
+            }));
+        }
+
+
+        [HttpGet("Adjuntos/{adjuntoId:int}/Descargar")]
+        public IActionResult DescargarAdjunto(int adjuntoId)
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var item = conn.QueryFirstOrDefault<dynamic>(
+                "CitaAdjunto_Obtener",
+                new { AdjuntoID = adjuntoId },
+                commandType: CommandType.StoredProcedure
+            );
+
+            if (item == null)
+                return NotFound(_utilitarios.RespuestaIncorrecta("Adjunto inexistente."));
+
+            string rutaRel = (string?)item.RutaRelativa ?? "";
+            string fullPath = Path.Combine(GetWebRootPath(), rutaRel.Replace('/', Path.DirectorySeparatorChar));
+
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound(_utilitarios.RespuestaIncorrecta("Archivo no encontrado en servidor."));
+
+            var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            string contentType = (string?)item.ContentType ?? "application/octet-stream";
+            string nombre = (string?)item.NombreArchivo ?? Path.GetFileName(fullPath);
+
+            return File(stream, contentType, fileDownloadName: nombre);
+        }
+
+        [HttpDelete("Adjuntos/{adjuntoId:int}")]
+        public IActionResult EliminarAdjunto(int adjuntoId)
+        {
+            using var conn = new SqlConnection(_configuration.GetConnectionString("Connection"));
+            var afectados = conn.QuerySingle<int>("CitaAdjunto_Eliminar",
+                new { AdjuntoID = adjuntoId }, commandType: CommandType.StoredProcedure);
+
+            if (afectados == 0) return NotFound(_utilitarios.RespuestaIncorrecta("Adjunto no existe."));
+            return Ok(_utilitarios.RespuestaCorrecta(null));
+        }
+
+        private static string SanitizeFileName(string fileName)
+        {
+            fileName = Path.GetFileName(fileName);
+            var safe = Regex.Replace(fileName, @"[^A-Za-z0-9\.\-_]+", "_");
+            return string.IsNullOrWhiteSpace(safe) ? "archivo" : safe;
         }
     }
 }
