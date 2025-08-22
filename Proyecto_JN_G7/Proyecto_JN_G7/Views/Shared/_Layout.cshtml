@@ -79,10 +79,10 @@
                         <ul class="dropdown-menu" style="min-width: 90%;">
                             <li><a class="dropdown-item" asp-controller="Usuarios" asp-action="ActualizarPerfilUsuario">Perfil</a></li>
                             <li><a class="dropdown-item" asp-controller="Usuarios" asp-action="ActualizarContrasenna">Seguridad</a></li>
-							@if (Context.Session.GetString("NombreRol") == "Usuario")
-							{
-								<li><a class="dropdown-item" asp-controller="Cita" asp-action="ConsultarCitasDoctor">Mis citas</a></li>
-							}
+                            @if (Context.Session.GetString("ROL") == "Usuario")
+                            {
+                                <li><a class="dropdown-item" asp-controller="Cita" asp-action="ConsultarCitasUsuario">Mis citas</a></li>
+                            }
                             <li><a class="dropdown-item" asp-controller="Account" asp-action="Logout">Cerrar sesión</a></li> 
                         </ul>
                     </div>
@@ -112,11 +112,13 @@
     <script src="~/js/bootstrap.bundle.min.js"></script>
     <script>
         window.ApiBaseUrl = '@Configuration["Start:ApiUrl"]';
-    </script>
+	</script>
+	<script src="~/js/appointment.js"></script>
     <script src="~/js/aos.js"></script>
     <script src="~/js/glightbox.min.js"></script>
     <script src="~/js/purecounter_vanilla.js"></script>
-    <script src="~/js/swiper-bundle.min.js"></script>
+	<script src="~/js/swiper-bundle.min.js"></script>
+	@* <script src="~/js/validate.js"></script> *@
     <script src="~/js/main.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

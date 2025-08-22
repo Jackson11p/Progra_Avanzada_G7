@@ -10,7 +10,9 @@
             <thead class="table-light">
                 <tr>
                     <th>ID Factura</th>
-                    <th>ID Cita</th>
+                    <th>Paciente</th>
+                    <th>Doctor</th>
+                    <th>Motivo Consulta</th>
                     <th>Fecha Emisión</th>
                     <th>Total</th>
                     <th>Estado de Pago</th>
@@ -31,8 +33,10 @@
                     {
                         <tr>
                             <td>@factura.FacturaID</td>
-                            <td>@factura.CitaID</td>
-                            <td>@factura.FechaEmision.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@factura.Paciente</td>
+                            <td>@factura.Doctor</td>
+                            <td>@factura.MotivoConsulta</td>
+                            <td>@factura.FechaHora.ToString("yyyy-MM-dd HH:mm")</td>
                             <td>@factura.Total.ToString("C")</td>
                             <td>@factura.EstadoPago</td>
                         </tr>

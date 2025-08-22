@@ -91,7 +91,6 @@ namespace Proyecto_JN_G7.Controllers
 
             if (rolNombre.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
                 return RedirectToAction("Index", "Admin");
-
             return RedirectToAction("Index", "Home");
         }
         #endregion
